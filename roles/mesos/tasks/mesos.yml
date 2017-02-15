@@ -1,25 +1,25 @@
 ---
-- name: Check if Docker is installed
-  command: dpkg-query -l docker-engine
-  register: is_installed
-  failed_when: is_installed.rc > 1
-  changed_when: no
+# - name: Check if Docker is installed
+  # command: dpkg-query -l docker-engine
+  # register: is_installed
+  # failed_when: is_installed.rc > 1
+  # changed_when: no
 
-- name: Add Docker repository
-  shell: echo deb http://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list
-  when: is_installed.rc == 1
+# - name: Add Docker repository
+  # shell: echo deb http://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+  # when: is_installed.rc == 1
 
-- name: Add Docker key
-  shell: apt-key adv --keyserver pgp.mit.edu --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
-  when: is_installed.rc == 1
+# - name: Add Docker key
+  # shell: apt-key adv --keyserver pgp.mit.edu --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+  # when: is_installed.rc == 1
 
-- name: Update apt
-  shell: apt-get update
-  when: is_installed.rc == 1
+# - name: Update apt
+  # shell: apt-get update
+  # when: is_installed.rc == 1
 
-- name: Install Docker
-  shell: apt-get install -y lxc-docker-1.7.1
-  when: is_installed.rc == 1
+# - name: Install Docker
+  # shell: apt-get install -y lxc-docker-1.7.1
+  # when: is_installed.rc == 1
 
 # == Work Dir for replicated log
 - name: create work dir

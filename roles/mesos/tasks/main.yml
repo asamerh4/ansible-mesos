@@ -1,7 +1,6 @@
 ---
 # Here we are using the debian package if debian
 - include_vars: "{{ ansible_os_family }}.yml"
-
 - include: common.yml
 
 # Here we are using the debian package if debian

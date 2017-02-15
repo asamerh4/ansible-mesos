@@ -8,7 +8,7 @@
 - include_vars: ../vars/us_west_2.yml
   when: aws_region == 'us-west-2'
 
-- include: ssh_keys.yml
+#- include: ssh_keys.yml
 
 - include: create_vpc.yml
   when: aws_provision or aws_destroy

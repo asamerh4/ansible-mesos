@@ -4,7 +4,7 @@ from subprocess import call
 parser = argparse.ArgumentParser(description = 'Deploy and manage a Mesos cluster on AWS.')
 
 parser.add_argument("region",
-                    choices = ["us-east-1", "us-west-1", "us-west-2"],
+                    choices = ["eu-central-1"],
                     help = "The AWS region to search and deploy Mesos into")
 
 parser.add_argument('cluster-id',
@@ -47,9 +47,9 @@ if args.action == "provision":
   else:
     call(["ansible-playbook",
           ansible_prompt,
-          "--private-key=~/.ssh/aws-us-west-2-mesos.pem",
+          "--private-key=~/mesos120.pem",
           "-e", "remote_user=ubuntu",
-          "-e", "aws_key_name=aws-us-west-2-mesos",
+          "-e", "aws_key_name=mesos120",
           "-e", "mesos_cluster_id={}".format(arg_vars["cluster-id"]),
           "-e", "aws_provision=True",
           "-e", "aws_region={}".format(arg_vars["region"]),
@@ -63,9 +63,9 @@ if args.action == "provision":
 elif args.action == "freshen":
     call(["ansible-playbook",
           ansible_prompt,
-          "--private-key=~/.ssh/aws-us-west-2-mesos.pem",
+          "--private-key=~/mesos120.pem",
           "-e", "remote_user=ubuntu",
-          "-e", "aws_key_name=aws-us-west-2-mesos",
+          "-e", "aws_key_name=mesos120",
           "-e", "mesos_cluster_id={}".format(arg_vars["cluster-id"]),
           "-e", "aws_provision=False",
           "-e", "aws_region={}".format(arg_vars["region"]),

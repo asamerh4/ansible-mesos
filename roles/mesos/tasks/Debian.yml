@@ -13,4 +13,4 @@
     - unzip
     - python-setuptools
     - python-dev
-    - mesos={{mesos_version}}-1.0.{{mesos_dist}}
+    - mesos

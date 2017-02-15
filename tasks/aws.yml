@@ -27,6 +27,7 @@
   sudo: yes
   pre_tasks:
     - include_vars: ../defaults/main.yml
+    - include_vars: ../vars/main.yml
   roles:
     - { role: mesos, mesos_install_mode: master, mesos_port: 5050 }
 

@@ -66,7 +66,7 @@ def private_zk_nodes(aws_region, cluster_id, access_key, secret_access_key):
   for r in conn.get_all_reservations():
     for i in r.instances:
       if (i.tags.get("cluster_id") == cluster_id) and (i.state == "running"):
-        if i.tags.get("mesos_zookeeper") == 'True':
+        if (i.tags.get("mesos_zookeeper") == 'True') or (i.tags.get("mesos_master") == 'True'):
           ips.append(i.private_ip_address)
   return ips
 

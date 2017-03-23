@@ -12,7 +12,7 @@
 
 - include: create_vpc.yml
   when: aws_provision or aws_destroy
-
+  
 - include: create_ec2_vm.yml
   when: aws_provision
 

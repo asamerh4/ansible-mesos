@@ -21,6 +21,17 @@
     wait: yes
   register: vpc
 
+- name: Gather route table facts
+  ec2_vpc_route_table_facts:
+    region: "{{ aws_region }}"
+    filters:
+      vpc-id: "{{ vpc.vpc_id }}"
+  register: rtb_facts
+
+- name: Create VPC S3-Endpoint
+  command: aws ec2 create-vpc-endpoint --vpc-id "{{ vpc.vpc_id }}" --service-name com.amazonaws.{{ aws_region }}.s3 --route-table-ids {{ rtb_facts.route_tables[0].id }} {{ rtb_facts.route_tables[1].id }} --output json
+  ignore_errors: yes
+  
 - name: Bind VPC subnet ID
   set_fact:
     vpc_subnet_id: "{{ vpc.subnets[0].id }}"
@@ -77,7 +88,7 @@
         to_port: 5050
         cidr_ip: 0.0.0.0/0
 
-- name: Create the Mesos Slave security group
+- name: Create the Mesos Agent security group
   ec2_group:
     name: "[{{ mesos_cluster_id }}] Mesos Slave Security Group"
     description: "Security group for Mesos Slave"

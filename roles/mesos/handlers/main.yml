@@ -2,5 +2,11 @@
 - name: Restart mesos-master
   service: name=mesos-master state=restarted
 
-- name: Restart mesos-slave 
+- name: Restart mesos-agent
   service: name=mesos-slave state=restarted
+
+- name: Disable mesos-master
+  service: name=mesos-master state=stopped enabled=no
+
+- name: Disable mesos-agent
+  service: name=mesos-slave state=stopped enabled=no

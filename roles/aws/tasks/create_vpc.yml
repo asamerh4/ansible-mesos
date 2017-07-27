@@ -86,6 +86,24 @@
       - proto: tcp
         from_port: 5050
         to_port: 5050
+        cidr_ip: 174.0.1.0/24
+
+- name: Create the Mesos Gateway security group
+  ec2_group:
+    name: "[{{ mesos_cluster_id }}] Mesos Gateway Security Group"
+    description: "Security group for Mesos Gateway"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    vpc_id: "{{ vpc.vpc_id }}"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 8080
+        to_port: 8080
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 50000
+        to_port: 50000
         cidr_ip: 0.0.0.0/0
 
 - name: Create the Mesos Agent security group

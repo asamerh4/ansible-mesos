@@ -147,10 +147,7 @@
               - mount -t tmpfs -o size=10g tmpfs /var/lib/docker
               - mount -t tmpfs -o size=10g tmpfs /var/lib/jenkins
               - systemctl start docker
-              - wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat-stable/jenkins.repo
-              - rpm --import http://pkg.jenkins.io/redhat-stable/jenkins.io.key
-              - yum -y install git jenkins java-1.8.0-openjdk
-              - sed -i 's/JENKINS_USER=.*/JENKINS_USER="centos"/' /etc/sysconfig/jenkins
+              - cp -R /home/centos/jenkins/plugins /var/lib/jenkins/
               - chown -R centos:centos /var/lib/jenkins
               - chown -R centos:centos /var/cache/jenkins
               - chown -R centos:centos /var/log/jenkins

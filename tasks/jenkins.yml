@@ -50,5 +50,3 @@
       service: name=jenkins state=restarted
     - debug:
         msg: "jenkins@http://{{ jenkins_host }}:8080; user:admin; pw:{{ pw.stdout }}"
-     
-      

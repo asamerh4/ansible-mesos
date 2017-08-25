@@ -21,8 +21,9 @@
     volumes:
       - device_name: /dev/sda1
         delete_on_termination: true
-        volume_type: gp2
-        volume_size: 8
+        volume_size: 10
+        device_type: io1
+        iops: 500
 
 - name: Wait for SSH on new EC2 machines
   wait_for:

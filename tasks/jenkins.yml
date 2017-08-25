@@ -15,4 +15,4 @@
       shell: cat /var/lib/jenkins/secrets/initialAdminPassword
       register: pw
     - debug:
-        msg: "jenkins@http://{{ jenkins_host }}:8080; user:admin; pw:{{ pw.stdout }}"
+        msg: "-->http://{{ jenkins_host }}:8080 user:admin; pw: {{ pw.stdout }} "

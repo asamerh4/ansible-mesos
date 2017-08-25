@@ -14,39 +14,5 @@
     - name: lookup-pw
       shell: cat /var/lib/jenkins/secrets/initialAdminPassword
       register: pw
-    - name: Install plugin
-      jenkins_plugin:
-        name: pipeline
-        params:
-          url_username: admin
-          url_password: "{{pw.stdout}}"
-        owner: "{{ remote_user }}"
-        group: "{{ remote_user }}"
-    - name: Install plugin
-      jenkins_plugin:
-        name: blueocean
-        params:
-          url_username: admin
-          url_password: "{{pw.stdout}}"
-        owner: "{{ remote_user }}"
-        group: "{{ remote_user }}"
-    - name: Install plugin
-      jenkins_plugin:
-        name: workflow-aggregator
-        params:
-          url_username: admin
-          url_password: "{{pw.stdout}}"
-        owner: "{{ remote_user }}"
-        group: "{{ remote_user }}"
-    - name: Install plugin
-      jenkins_plugin:
-        name: docker-plugin
-        params:
-          url_username: admin
-          url_password: "{{pw.stdout}}"
-        owner: "{{ remote_user }}"
-        group: "{{ remote_user }}"
-    - name: restart
-      service: name=jenkins state=restarted
     - debug:
         msg: "jenkins@http://{{ jenkins_host }}:8080; user:admin; pw:{{ pw.stdout }}"

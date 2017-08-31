@@ -26,3 +26,15 @@ ansible-playbook \
 -e jenkins_host=$ec2_ip \
 -e remote_user=centos \
 tasks/jenkins.yml
+
+#stdout some mesos-master infos
+private_master_ip=\
+$(\
+  aws ec2 describe-instances \
+  --filter \
+    Name=tag-key,Values=mesos_master \
+  --output=json \
+  | jq .Reservations[].Instances[].PrivateIpAddress \
+  | tr -d '"'
+)
+echo "INFO: mesos-master @ "$private_master_ip:5050

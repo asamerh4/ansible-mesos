@@ -1,1 +1,1 @@
-echo "{{ aws_region | private_zk_nodes(mesos_cluster_id, aws_access_key, aws_secret_key) | join(":2181,") ~ ':2181' }}"
+echo "{{ mesos_otc_master | join(":2181,") ~ ':2181' }}"

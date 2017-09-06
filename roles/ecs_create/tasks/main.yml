@@ -1,0 +1,25 @@
+- name: Send request to API
+  uri:
+    url: "{{ AUTH_URL_ECS_CLOUD }}/{{ PROJECT_ID }}/cloudservers"
+    method: POST
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+    body: "{{ lookup('template', '../templates/request.json.j2')|to_json }}"
+  register: ecs
+  when:
+    - ecs_name is defined
+    - image_id is defined
+    - flavor_id is defined
+    - listener_name is undefined
+
+- set_fact:
+    job_id: "{{ (ecs.content|from_json)|json_query('job_id') }}"
+  when: ecs is defined and ecs.content|length != 0
+
+- debug:
+    msg: "{{ job_id }}"
+  when: job_id is defined

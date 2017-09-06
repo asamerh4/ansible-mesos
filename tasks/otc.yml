@@ -1,0 +1,67 @@
+---
+- hosts: localhost
+  pre_tasks:
+    - include: populate_otc_inventory.yml
+  roles:
+    - token
+    - { role: ecs_create, 
+          availability_zone: "eu-de-01",
+          ecs_name: "test4", 
+          image_id: "8b925c1b-829c-452f-820a-5690d033cf70",
+          ecs_volumesize: "10",
+          ecs_volumetype: "SSD",
+          flavor_id: "highmem2",
+          vpc_id: "f0f0e22e-e52d-4e83-9f7a-b09fb6cc7286",
+          secgroup_id: "692513aa-590d-4fe9-bd67-01e787d711ea",
+          ecs_ipaddress: "",
+          subnet_id: "39ad637f-ad0d-4d73-a9f5-92de15f3721b",
+          eip_id: "",
+          ecs_fileinject_1: "",
+          ecs_fileinject_data_1: "",
+          ecs_fileinject_2: "",
+          ecs_fileinject_data_2: "",
+          ecs_fileinject_3: "",
+          ecs_fileinject_data_3: "",
+          ecs_fileinject_4: "",
+          ecs_fileinject_data_4: "",
+          ecs_fileinject_5: "",
+          ecs_fileinject_data_5: "",
+          ecs_user_data: "",
+          ecs_adminpass: "",
+          ecs_adminkey: "mesos130-api"   
+      }
+
+# - hosts: mesos-masters
+  # remote_user: "{{ remote_user }}"
+  # sudo: yes
+  # pre_tasks:
+    # - include_vars: ../vars/main.yml
+  # tasks:
+  # - name: RAMDISK in /var/lib/docker
+    # mount: name=/var/lib/docker src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
+  
+  # - name: RAMDISK in /var/lib/mesos
+    # mount: name=/var/lib/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
+  
+  # - name: RAMDISK in /var/log/mesos
+    # mount: name=/var/log/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
+
+  # - name: Restart docker engine
+    # service: name=docker state=started enabled=yes
+
+# - hosts: public-zk-nodes
+  # remote_user: "{{ remote_user }}"
+  # sudo: yes
+  # pre_tasks:
+    # - include_vars: ../defaults/main.yml
+    # - include_vars: ../vars/main.yml
+  # roles:
+    # - { role: zookeeper }
+
+# - hosts: mesos-masters
+  # remote_user: "{{ remote_user }}"
+  # sudo: yes
+  # pre_tasks:
+    # - include_vars: ../roles/mesos/defaults/main.yml
+  # roles:
+    # - { role: mesos, mesos_install_mode: master, mesos_port: 5050 }

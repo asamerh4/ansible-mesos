@@ -1,0 +1,53 @@
+{
+    "server": {
+        "availability_zone": "{{ availability_zone }}",
+        "name": "{{ ecs_name }}",
+        "imageRef": "{{ image_id }}",
+        "root_volume": {
+{% if ecs_volumesize |length != 0 %}  
+            "size": "{{ ecs_volumesize }}",
+{% endif %}  
+            "volumetype": "{{ ecs_volumetype }}"
+        },
+        "flavorRef": "{{ flavor_id }}",
+        "vpcid": "{{ vpc_id }}",
+        "security_groups": [
+            {
+                "id": "{{ secgroup_id }}"
+            }
+        ],
+        "nics": [
+            {
+{% if ecs_ipaddress |length != 0 %}  
+                "ip_address": "{{ ecs_ipaddress }}",
+{% endif %}  
+                "subnet_id": "{{ subnet_id }}"
+            }
+        ],
+
+        "publicip": {
+            
+			"eip": {
+                "iptype": "5_bgp",
+                "bandwidth": {
+                    "size": "10", 
+                    "sharetype": "PER"
+            }
+            }
+        },
+
+
+{% if ecs_user_data is defined %}  
+        "user_data": "{{ ecs_user_data }}",
+{% endif %}  
+
+{% if ecs_adminkey is defined %}  
+        "key_name": "{{ ecs_adminkey }}",
+        "adminPass": "",
+{% endif %}  
+        "count": 1,
+        "},": {
+            "__vnc_keymap": "de"
+        }
+   }
+}

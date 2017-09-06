@@ -1,6 +1,6 @@
 ---
 mesos_install_mode: "master" # {master|slave|master-slave}
-zookeeper_hostnames: "{{ aws_region | private_zk_nodes(mesos_cluster_id, aws_access_key, aws_secret_key) | join(':2181,') ~ ':2181' }}"
+zookeeper_hostnames: "{{ mesos_hostname }}:2181"
 
 mesos_log_location: "/var/log/mesos"
 mesos_ulimit: "-n 8192"

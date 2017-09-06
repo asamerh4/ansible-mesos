@@ -7,19 +7,8 @@
   get_url: url={{zookeeper_url}} dest=/opt/src/zookeeper-{{zookeeper_version}}.tar.gz
   tags: bootstrap
 
-- name: Install OS Packages
-  yum: name={{ item }} state=present
-  with_items:
-    - libselinux-python
-
 - name: Install Java packages
   yum: name=java-1.8.0-openjdk
-
-- name: install pip
-  easy_install: name=pip state=latest
-    
-- name: install aws cli
-  pip: name=awscli
   
 - name: Unpack tarball.
   command: tar zxf /opt/src/zookeeper-{{zookeeper_version}}.tar.gz --strip-components=1 chdir={{zookeeper_dir}} creates={{zookeeper_dir}}/bin

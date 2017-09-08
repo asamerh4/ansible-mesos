@@ -1,35 +1,187 @@
 ---
 - hosts: localhost
   pre_tasks:
-    - include: populate_otc_inventory.yml
+    - include_vars: ../vars/main.yml
   roles:
     - token
-    - { role: ecs_create, 
-          availability_zone: "eu-de-01",
-          ecs_name: "test4", 
-          image_id: "8b925c1b-829c-452f-820a-5690d033cf70",
-          ecs_volumesize: "10",
-          ecs_volumetype: "SSD",
-          flavor_id: "highmem2",
-          vpc_id: "f0f0e22e-e52d-4e83-9f7a-b09fb6cc7286",
-          secgroup_id: "692513aa-590d-4fe9-bd67-01e787d711ea",
-          ecs_ipaddress: "",
-          subnet_id: "39ad637f-ad0d-4d73-a9f5-92de15f3721b",
-          eip_id: "",
-          ecs_fileinject_1: "",
-          ecs_fileinject_data_1: "",
-          ecs_fileinject_2: "",
-          ecs_fileinject_data_2: "",
-          ecs_fileinject_3: "",
-          ecs_fileinject_data_3: "",
-          ecs_fileinject_4: "",
-          ecs_fileinject_data_4: "",
-          ecs_fileinject_5: "",
-          ecs_fileinject_data_5: "",
-          ecs_user_data: "",
-          ecs_adminpass: "",
-          ecs_adminkey: "mesos130-api"   
+    # - { role: subnet_create,
+          # subnet_name: "{{ cluster_id }}",
+          # subnet_net: "{{ subnet_cidr }}",
+          # subnet_gateway: "192.168.0.1",
+          # subnet_primary_dns: "100.125.4.25",
+          # subnet_secondary_dns: "8.8.8.8",
+          # availability_zone: "eu-de-02",
+      # }
+#PUBLIC
+    # - { role: secgroup_create,
+          # secgroup_name: "{{ cluster_id }}-public"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "22",
+          # secgrouprule_port_range_max: "22",
+          # secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "egress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+# - hosts: localhost
+  # pre_tasks:
+    # - include_vars: ../vars/main.yml
+  # roles:
+# #ZOOKEEPER
+    # - { role: secgroup_create,         
+          # secgroup_name: "{{ cluster_id }}-zookeeper"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "2181",
+          # secgrouprule_port_range_max: "2181",
+          # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "2888",
+          # secgrouprule_port_range_max: "2888",
+          # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "3888",
+          # secgrouprule_port_range_max: "3888",
+          # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "egress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+
+# - hosts: localhost
+  # pre_tasks:
+    # - include_vars: ../vars/main.yml
+  # roles:
+# #MASTER
+    # - { role: secgroup_create,         
+          # secgroup_name: "{{ cluster_id }}-master"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "5050",
+          # secgrouprule_port_range_max: "5050",
+          # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "egress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+# - hosts: localhost
+  # pre_tasks:
+    # - include_vars: ../vars/main.yml
+  # roles:
+# #AGENT
+    # - { role: secgroup_create,         
+          # secgroup_name: "{{ cluster_id }}-agent"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "ingress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_protocol: "tcp",
+          # secgrouprule_port_range_min: "5151",
+          # secgrouprule_port_range_max: "5151",
+          # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+    # - { role: secgrouprule_create,
+          # secgrouprule_direction: "egress",
+          # secgrouprule_ethertype: "IPv4",
+          # secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+      # }
+
+#SECGROUP-FACTS
+- hosts: localhost
+  vars:
+    query_zoo: "security_groups[?name=='{{ cluster_id }}-zookeeper'].id"
+    query_master: "security_groups[?name=='{{ cluster_id }}-master'].id"
+    query_agent: "security_groups[?name=='{{ cluster_id }}-agent'].id"
+    query_public: "security_groups[?name=='{{ cluster_id }}-public'].id"
+  roles:
+    - secgroups
+  tasks:
+  - name: secgroup facts
+    set_fact: secfact_zoo="{{ secgrouplistvpc['json']|json_query(query_zoo) }}"
+  - name: fact_master
+    set_fact: secfact_master="{{ secgrouplistvpc['json']|json_query(query_master) }}"
+  - name: fact_agent
+    set_fact: secfact_agent="{{ secgrouplistvpc['json']|json_query(query_agent) }}"
+  - name: fact_public
+    set_fact: secfact_public="{{ secgrouplistvpc['json']|json_query(query_public) }}"
+  #- debug:
+  #    msg: '[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]'
+  
+
+#MASTER&ZOOKEEPER VM
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    # - { role: ecs_create,
+          # availability_zone: "eu-de-02",
+          # ecs_name: "mesos-master",
+          # ecs_volumesize: "10",
+          # ecs_volumetype: "SSD",
+          # flavor_id: "highmem2",
+          # secgroup_ids: '[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]',
+          # ecs_ipaddress: "",
+          # subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
+          # #"{{ subnet['json']['subnet']['id'] }}",
+          # ecs_user_data: "",
+          # ecs_adminpass: "",
+          # ecs_adminkey: "mesos130-api"
+      # }
+    - { role: asconfig_create,
+          asconfig_name: "agent",
+          flavor: "highmem2",
+          #image_id: from vars
+          disk_size: "10",
+          disk_type: "SSD",
+          key: "mesos130-api"
       }
+    - { role: asgroup_create,
+          asgroup_name: "agents",
+          asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
+          desired: "0",
+          min: "0",
+          max: "0",
+          cooldown: "200",
+          subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
+          #"{{ subnet['json']['subnet']['id'] }}",
+          secgroups: '[{"id": "{{ secfact_agent[0] }}"}]'
+      }
+    
+
 
 # - hosts: mesos-masters
   # remote_user: "{{ remote_user }}"

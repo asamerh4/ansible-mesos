@@ -1,0 +1,17 @@
+{
+   "scaling_group_name": "{{ asgroup_name }}",
+   "scaling_configuration_id": "{{ asconfig_id }}",
+   "desire_instance_number": "{{ desired }}",
+   "min_instance_number": "{{ min }}",
+   "max_instance_number": "{{ max }}",
+   "cool_down_time": "{{ cooldown }}",
+   "health_periodic_audit_method": "NOVA_AUDIT",
+   "health_periodic_audit_time": "5",
+   "instance_terminate_policy": "OLD_CONFIG_OLD_INSTANCE",
+   "vpc_id": "{{ vpc_id }}",
+   "networks": [{
+         "id": "{{ subnet_id }}"
+      }
+   ],
+   "security_groups": {{ secgroups }}
+}

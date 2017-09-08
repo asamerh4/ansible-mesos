@@ -1,0 +1,35 @@
+- name: Create SecGroup
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v1/{{ PROJECT_ID }}/security-groups"
+    method: POST
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+    body: "{{ lookup('template', '../templates/request.json.j2')|to_json }}"
+  #when: (not secgroup_id and secgroup_name is defined)
+  register: secgroup
+- name: delete dummy secgroup-rule[0]
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/security-group-rules/{{ secgroup['json']['security_group']['security_group_rules'][0]['id'] }}"
+    method: DELETE
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    status_code: 200,201,202,203,204
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+- name: delete dummy secgroup-rule[1]
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/security-group-rules/{{ secgroup['json']['security_group']['security_group_rules'][1]['id'] }}"
+    method: DELETE
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    status_code: 200,201,202,203,204
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"

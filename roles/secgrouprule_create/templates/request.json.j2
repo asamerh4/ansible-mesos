@@ -1,0 +1,27 @@
+{
+    "security_group_rule": {
+        "direction": "{{ secgrouprule_direction }}",
+{% if secgrouprule_ethertype is defined and secgrouprule_ethertype|length != 0 %}  
+        "ethertype": "{{ secgrouprule_ethertype }}",
+{% endif %}  
+{% if secgrouprule_ethertype is defined and secgrouprule_ethertype|length != 0  %}  
+        "ethertype": "{{ secgrouprule_ethertype }}",
+{% endif %}  
+{% if secgrouprule_protocol is defined and secgrouprule_protocol|length != 0 %}  
+        "protocol": "{{ secgrouprule_protocol }}",
+{% endif %}  
+{% if secgrouprule_port_range_min is defined and secgrouprule_port_range_min|length != 0 %}  
+        "port_range_min": {{ secgrouprule_port_range_min }},
+{% endif %}  
+{% if secgrouprule_port_range_max is defined and secgrouprule_port_range_max|length != 0 %}  
+        "port_range_max": {{ secgrouprule_port_range_max }},
+{% endif %}  
+{% if secgrouprule_remote_ip_prefix is defined and secgrouprule_remote_ip_prefix|length != 0 %}  
+        "remote_ip_prefix": "{{ secgrouprule_remote_ip_prefix }}",
+{% endif %}  
+{% if secgrouprule_remote_group_id is defined and secgrouprule_remote_group_id|length != 0  %}  
+        "remote_group_id": "{{ secgrouprule_remote_group_id }}",
+{% endif %}  
+        "security_group_id": "{{ secgroup_id }}",
+   }
+}

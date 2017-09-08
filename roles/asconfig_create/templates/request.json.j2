@@ -1,0 +1,14 @@
+{
+   "scaling_configuration_name": "{{ asconfig_name }}",
+   "instance_config": {
+      "flavorRef": "{{ flavor }}",
+      "imageRef": "{{ image_id }}",
+      "disk": [{
+            "size": "{{ disk_size }}",
+            "volume_type": "{{ disk_type }}",
+            "disk_type": "SYS"
+         }
+      ],
+      "key_name": "{{ key }}"
+   }
+}

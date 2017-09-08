@@ -11,11 +11,7 @@
         },
         "flavorRef": "{{ flavor_id }}",
         "vpcid": "{{ vpc_id }}",
-        "security_groups": [
-            {
-                "id": "{{ secgroup_id }}"
-            }
-        ],
+        "security_groups": {{ secgroup_ids }},
         "nics": [
             {
 {% if ecs_ipaddress |length != 0 %}  

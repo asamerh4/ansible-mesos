@@ -1,0 +1,13 @@
+- name: Create ASGroup
+  uri:
+    url: "{{ AUTH_URL_VPC }}/autoscaling-api/v1/{{ PROJECT_ID }}/scaling_group"
+    method: POST
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+    body: "{{ lookup('template', '../templates/request.json.j2')|to_json }}"
+  #when: (not secgroup_id and secgroup_name is defined)
+  register: asgroup

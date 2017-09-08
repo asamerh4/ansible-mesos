@@ -9,6 +9,7 @@
             "disk_type": "SYS"
          }
       ],
-      "key_name": "{{ key }}"
+      "key_name": "{{ key }}",
+	  "user_data": "{{ userdata | b64encode }}"
    }
 }

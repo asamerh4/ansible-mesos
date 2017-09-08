@@ -167,7 +167,9 @@
           #image_id: from vars
           disk_size: "10",
           disk_type: "SSD",
-          key: "mesos130-api"
+          key: "mesos130-api",
+          userdata: "{{ agent_asconfig_userdata }}"
+
       }
     - { role: asgroup_create,
           asgroup_name: "agents",

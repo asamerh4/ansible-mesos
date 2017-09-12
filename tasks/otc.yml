@@ -12,7 +12,7 @@
           # subnet_secondary_dns: "8.8.8.8",
           # availability_zone: "eu-de-02",
       # }
-#PUBLIC
+#SECGROUP-PUBLIC
     # - { role: secgroup_create,
           # secgroup_name: "{{ cluster_id }}-public"
       # }
@@ -35,7 +35,7 @@
   # pre_tasks:
     # - include_vars: ../vars/main.yml
   # roles:
-# #ZOOKEEPER
+# #SECGROUP-ZOOKEEPER
     # - { role: secgroup_create,         
           # secgroup_name: "{{ cluster_id }}-zookeeper"
       # }
@@ -77,7 +77,7 @@
   # pre_tasks:
     # - include_vars: ../vars/main.yml
   # roles:
-# #MASTER
+# #SECGROUP-MASTER
     # - { role: secgroup_create,         
           # secgroup_name: "{{ cluster_id }}-master"
       # }
@@ -100,7 +100,7 @@
   # pre_tasks:
     # - include_vars: ../vars/main.yml
   # roles:
-# #AGENT
+# #SECGROUP-AGENT
     # - { role: secgroup_create,         
           # secgroup_name: "{{ cluster_id }}-agent"
       # }
@@ -108,8 +108,8 @@
           # secgrouprule_direction: "ingress",
           # secgrouprule_ethertype: "IPv4",
           # secgrouprule_protocol: "tcp",
-          # secgrouprule_port_range_min: "5151",
-          # secgrouprule_port_range_max: "5151",
+          # secgrouprule_port_range_min: "5051",
+          # secgrouprule_port_range_max: "5051",
           # secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
           # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
       # }
@@ -120,7 +120,10 @@
           # secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
       # }
 
-#SECGROUP-FACTS
+      
+  
+      
+#SECURITYGROUP-FACTS
 - hosts: localhost
   vars:
     query_zoo: "security_groups[?name=='{{ cluster_id }}-zookeeper'].id"
@@ -142,11 +145,10 @@
   #    msg: '[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]'
   
 
-#MASTER&ZOOKEEPER VM
-- hosts: localhost
-  pre_tasks:
-    - include_vars: ../vars/main.yml
-  roles:
+
+#CREATE MASTER&ZOOKEEPER VM
+# - hosts: localhost
+  # roles:
     # - { role: ecs_create,
           # availability_zone: "eu-de-02",
           # ecs_name: "mesos-master",
@@ -161,30 +163,40 @@
           # ecs_adminpass: "",
           # ecs_adminkey: "mesos130-api"
       # }
-    - { role: asconfig_create,
-          asconfig_name: "agent",
-          flavor: "highmem2",
-          #image_id: from vars
-          disk_size: "10",
-          disk_type: "SSD",
-          key: "mesos130-api",
-          userdata: "{{ agent_asconfig_userdata }}"
+  # tasks:
+  # - name: wait for 4 minutes (ECS)
+    # pause:
+      # minutes: 4
 
-      }
-    - { role: asgroup_create,
-          asgroup_name: "agents",
-          asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
-          desired: "0",
-          min: "0",
-          max: "0",
-          cooldown: "200",
-          subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
-          #"{{ subnet['json']['subnet']['id'] }}",
-          secgroups: '[{"id": "{{ secfact_agent[0] }}"}]'
-      }
+      
+
+#GATHER MASTER-VM-FACTS && populate inventory
+- hosts: localhost
+  roles:
+    - ecs
+  tasks:
+  - name: master's private IP group
+    set_fact: master_private_group="{{ ecslist['json']|json_query('servers[0].addresses.*[0]') }}"
+  - name: master's private IP
+    set_fact: master_private_ip="{{ master_private_group[0].addr }}"
+
+- hosts: localhost
+  vars:
+    query_eip: "publicips[?private_ip_address=='{{ master_private_ip }}'].public_ip_address"
+  roles:
+    - eip
+  tasks:
+  - name: get public IP
+    set_fact: master_public_ip="{{ floatingiplist['json']|json_query(query_eip) }}"
+  - debug: msg="{{ master_public_ip }}"
     
+- hosts: localhost
+  pre_tasks:
+    - include: populate_otc_inventory.yml
+  
 
 
+#SW-config of MASTER&ZOOKEEPER
 # - hosts: mesos-masters
   # remote_user: "{{ remote_user }}"
   # sudo: yes
@@ -218,4 +230,58 @@
   # pre_tasks:
     # - include_vars: ../roles/mesos/defaults/main.yml
   # roles:
-    # - { role: mesos, mesos_install_mode: master, mesos_port: 5050 }
+    # - { role: mesos, mesos_install_mode: master, mesos_port: 5050 } 
+
+#CREATE AGENT AUTOSCALING GROUP
+- hosts: localhost
+  vars:
+    agent_asconfig_userdata: |
+      #cloud-config
+      runcmd:
+        - mount -t tmpfs -o size=10g tmpfs /var/lib/docker
+        - mount -t tmpfs -o size=10g tmpfs /var/lib/mesos
+        - mount -t tmpfs -o size=10g tmpfs /var/log/mesos
+        - rm -rf /etc/mesos
+        - rm -rf /etc/mesos-master/
+        - rm -rf /etc/mesos-slave/
+        - rm /etc/default/mesos*
+        - echo 'CLUSTER="{{ cluster_id }}"'                                                            > /etc/default/mesos
+        - echo 'IP="'$(hostname -I | cut -d" " -f 1)'"'                                               >> /etc/default/mesos
+        - echo 'LOGS="/var/log/mesos"'                                                                >> /etc/default/mesos
+        - echo 'ULIMIT="-n 8192"'                                                                     >> /etc/default/mesos
+        - echo 'ZK="zk://{{ master_private_ip }}:2181/mesos"'                                                   >> /etc/default/mesos
+        - echo 'export MESOS_HOSTNAME="'$(hostname -I | cut -d" " -f 1)'"'                             > /etc/default/mesos-slave
+        - echo 'export MESOS_MASTER="zk://{{ master_private_ip }}:2181/mesos"'                                  >> /etc/default/mesos-slave
+        - echo 'export MESOS_CONTAINERIZERS="docker,mesos"'                                           >> /etc/default/mesos-slave
+        - echo 'export MESOS_EXECUTOR_REGISTRATION_TIMEOUT="5mins"'                                   >> /etc/default/mesos-slave
+        - echo 'export MESOS_PORT="5051"'                                                             >> /etc/default/mesos-slave
+        - echo 'export MESOS_WORK_DIR="/var/lib/mesos"'                                               >> /etc/default/mesos-slave
+        - systemctl start docker
+        - systemctl start mesos-slave
+  roles:
+    
+    - { role: asconfig_create,
+          asconfig_name: "agent",
+          flavor: "highmem2",
+          #image_id: from vars
+          disk_size: "10",
+          disk_type: "SSD",
+          key: "mesos130-api",
+          userdata: "{{ agent_asconfig_userdata }}"
+
+      }
+    - { role: asgroup_create,
+          asgroup_name: "agents",
+          asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
+          desired: "1",
+          min: "0",
+          max: "1",
+          cooldown: "200",
+          subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
+          #"{{ subnet['json']['subnet']['id'] }}",
+          secgroups: '[{"id": "{{ secfact_agent[0] }}"}]'
+      }
+    
+
+
+

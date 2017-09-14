@@ -1,6 +1,6 @@
 ---
 - name: Restart mesos-master
-  service: name=mesos-master state=restarted
+  service: name=mesos-master state=restarted enabled=on
 
 - name: Restart mesos-agent
   service: name=mesos-slave state=restarted

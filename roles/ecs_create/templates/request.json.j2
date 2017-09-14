@@ -34,7 +34,7 @@
 
 
 {% if ecs_user_data is defined %}  
-        "user_data": "{{ ecs_user_data }}",
+        "user_data": "{{ ecs_user_data | b64encode }}",
 {% endif %}  
 
 {% if ecs_adminkey is defined %}  

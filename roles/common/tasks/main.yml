@@ -8,6 +8,8 @@
     owner: "{{ remote_user }}"
     group: "{{ remote_user }}"
     mode: 0555
+  retries: 3
+   
 
 - name: Install IP resolution script
   template:

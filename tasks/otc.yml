@@ -1,9 +1,25 @@
 ---
+#FACTS
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  
+  roles:
+    - token
+    - secgroups
+    - securitygroup_facts
+    - ecs
+    - eip
+    - server_facts
+    - asgroups
+    #- vpc_ports
+  
+#CREATE SUBNET & SECGROUPS
 - hosts: localhost
   pre_tasks:
     - include_vars: ../vars/main.yml
   roles:
-    - token
+    #- token
     # - { role: subnet_create,
           # subnet_name: "{{ cluster_id }}",
           # subnet_net: "{{ subnet_cidr }}",
@@ -14,7 +30,8 @@
       # }
 #SECGROUP-PUBLIC
     - { role: secgroup_create,
-          secgroup_name: "{{ cluster_id }}-public"
+          secgroup_name: "{{ cluster_id }}-public",
+          when: secfact_public|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -23,7 +40,9 @@
           secgrouprule_port_range_min: "22",
           secgrouprule_port_range_max: "22",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public|length == 0
+          
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -32,13 +51,17 @@
           secgrouprule_port_range_min: "",
           secgrouprule_port_range_max: "",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public|length == 0
+          
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public|length == 0
+          
       }
 - hosts: localhost
   pre_tasks:
@@ -46,7 +69,8 @@
   roles:
 #SECGROUP-ZOOKEEPER
     - { role: secgroup_create,         
-          secgroup_name: "{{ cluster_id }}-zookeeper"
+          secgroup_name: "{{ cluster_id }}-zookeeper",
+          when: secfact_zoo|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -55,7 +79,8 @@
           secgrouprule_port_range_min: "2181",
           secgrouprule_port_range_max: "2181",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_zoo|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -64,7 +89,8 @@
           secgrouprule_port_range_min: "2888",
           secgrouprule_port_range_max: "2888",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_zoo|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -73,13 +99,15 @@
           secgrouprule_port_range_min: "3888",
           secgrouprule_port_range_max: "3888",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_zoo|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_zoo|length == 0
       }
 
 - hosts: localhost
@@ -88,7 +116,8 @@
   roles:
 #SECGROUP-MASTER
     - { role: secgroup_create,         
-          secgroup_name: "{{ cluster_id }}-master"
+          secgroup_name: "{{ cluster_id }}-master",
+          when: secfact_master|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -97,13 +126,15 @@
           secgrouprule_port_range_min: "5050",
           secgrouprule_port_range_max: "5050",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
       }
 - hosts: localhost
   pre_tasks:
@@ -111,7 +142,8 @@
   roles:
 #SECGROUP-AGENT
     - { role: secgroup_create,         
-          secgroup_name: "{{ cluster_id }}-agent"
+          secgroup_name: "{{ cluster_id }}-agent",
+          when: secfact_agent|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -120,7 +152,8 @@
           secgrouprule_port_range_min: "5051",
           secgrouprule_port_range_max: "5051",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_agent|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
@@ -129,36 +162,17 @@
           secgrouprule_port_range_min: "22",
           secgrouprule_port_range_max: "22",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_agent|length == 0
       }
     - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}"
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_agent|length == 0
       }
  
-#SECURITYGROUP-FACTS
-- hosts: localhost
-  vars:
-    query_zoo: "security_groups[?name=='{{ cluster_id }}-zookeeper'].id"
-    query_master: "security_groups[?name=='{{ cluster_id }}-master'].id"
-    query_agent: "security_groups[?name=='{{ cluster_id }}-agent'].id"
-    query_public: "security_groups[?name=='{{ cluster_id }}-public'].id"
-  roles:
-    - secgroups
-  tasks:
-  - name: secgroup facts
-    set_fact: secfact_zoo="{{ secgrouplistvpc['json']|json_query(query_zoo) }}"
-  - name: fact_master
-    set_fact: secfact_master="{{ secgrouplistvpc['json']|json_query(query_master) }}"
-  - name: fact_agent
-    set_fact: secfact_agent="{{ secgrouplistvpc['json']|json_query(query_agent) }}"
-  - name: fact_public
-    set_fact: secfact_public="{{ secgrouplistvpc['json']|json_query(query_public) }}"
-  #- debug: msg='[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]'
-  
-
 
 #CREATE MASTER&ZOOKEEPER VM
 - hosts: localhost
@@ -173,6 +187,7 @@
         - service iptables save
 
   roles:
+    - server_facts
     - { role: ecs_create,
           availability_zone: "eu-de-02",
           ecs_name: "mesos-master",
@@ -184,59 +199,38 @@
           subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
           #"{{ subnet['json']['subnet']['id'] }}",
           ecs_adminpass: "",
-          ecs_adminkey: "mesos130-api"
+          ecs_adminkey: "mesos130-api",
+          when: master_public_ip is not defined
       }
   tasks:
   - name: wait for 4 minutes (ECS)
     pause:
       minutes: 4
+    when: master_public_ip is not defined
 
-#GATHER MASTER-VM-FACTS && populate inventory
-- hosts: localhost
-  roles:
-    - ecs
-  tasks:
-  - name: master's private IP group
-    set_fact: master_private_group="{{ ecslist['json']|json_query('servers[0].addresses.*[0]') }}"
-  - name: master's private IP
-    set_fact: master_private_ip="{{ master_private_group[0].addr }}"
-
-- hosts: localhost
-  vars:
-    query_eip: "publicips[?private_ip_address=='{{ master_private_ip }}'].public_ip_address"
-  roles:
-    - eip
-  tasks:
-  - name: get public IP
-    set_fact: master_public_ip="{{ floatingiplist['json']|json_query(query_eip) }}"
-  - debug: msg="{{ master_public_ip }}"
+  - include: populate_otc_inventory.yml
+    when: master_public_ip is defined
     
-- hosts: localhost
-  pre_tasks:
-    - include: populate_otc_inventory.yml
 
 #SW-config of MASTER&ZOOKEEPER
 - hosts: mesos-masters
   remote_user: "{{ remote_user }}"
-  sudo: yes
+  become: yes
   pre_tasks:
     - include_vars: ../vars/main.yml
   tasks:
   - name: RAMDISK in /var/lib/docker
     mount: name=/var/lib/docker src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
-  
   - name: RAMDISK in /var/lib/mesos
-    mount: name=/var/lib/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
-  
+    mount: name=/var/lib/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted 
   - name: RAMDISK in /var/log/mesos
     mount: name=/var/log/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
-
   - name: Restart docker engine
     service: name=docker state=started enabled=yes
 
 - hosts: public-zk-nodes
   remote_user: "{{ remote_user }}"
-  sudo: yes
+  become: yes
   pre_tasks:
     - include_vars: ../defaults/main.yml
     - include_vars: ../vars/main.yml
@@ -245,7 +239,7 @@
 
 - hosts: mesos-masters
   remote_user: "{{ remote_user }}"
-  sudo: yes
+  become: yes
   pre_tasks:
     - include_vars: ../roles/mesos/defaults/main.yml
   roles:
@@ -255,6 +249,7 @@
 #CREATE AGENT AUTOSCALING GROUP
 - hosts: localhost
   vars:
+    current_as_groups: "{{ asgroups['json']['scaling_groups'] }}"
     agent_asconfig_userdata: |
       #cloud-config
       runcmd:
@@ -283,8 +278,7 @@
         - systemctl enable docker
         - systemctl start mesos-slave
         - systemctl enable mesos-slave
-  roles:
-    
+  roles:   
     - { role: asconfig_create,
           asconfig_name: "agent",
           flavor: "highmem2",
@@ -292,8 +286,8 @@
           disk_size: "10",
           disk_type: "SSD",
           key: "mesos130-api",
-          userdata: "{{ agent_asconfig_userdata }}"
-
+          userdata: "{{ agent_asconfig_userdata }}",
+          when: current_as_groups|length == 0
       }
     - { role: asgroup_create,
           asgroup_name: "agents",
@@ -304,9 +298,6 @@
           cooldown: "200",
           subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
           #"{{ subnet['json']['subnet']['id'] }}",
-          secgroups: '[{"id": "{{ secfact_agent[0] }}"}]'
+          secgroups: '[{"id": "{{ secfact_agent[0] }}"}]',
+          when: current_as_groups|length == 0
       }
-    
-
-
-

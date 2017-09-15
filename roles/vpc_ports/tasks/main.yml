@@ -1,0 +1,24 @@
+- name: Request VPC-ports from API
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/ports"
+    method: GET
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+  register: portlist
+  
+- debug: msg="{{ portlist['json'] }}"
+
+- name: Disable source/destination check of master
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/ports/{{ portlist['json']|json_query(port_query)|json_query('[0]') }}"
+    method: PUT
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+    body: "{{ lookup('template', '../templates/request.json.j2')|to_json }}"
+  register: gdhdgf

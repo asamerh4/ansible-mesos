@@ -1,0 +1,2 @@
+---
+port_query: "ports[?fixed_ips[0].ip_address=='{{ master_private_ip }}'].id"

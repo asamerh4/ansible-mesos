@@ -1,0 +1,2 @@
+---
+query_eip: "publicips[?private_ip_address=='{{ master_private_ip }}'].public_ip_address"

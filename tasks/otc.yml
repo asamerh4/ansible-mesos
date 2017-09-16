@@ -12,7 +12,6 @@
     - eip
     - server_facts
     - asgroups
-    #- vpc_ports
   
 #CREATE SUBNET & SECGROUPS
 - hosts: localhost
@@ -187,7 +186,8 @@
         - service iptables save
 
   roles:
-    - server_facts
+    - secgroups
+    - securitygroup_facts
     - { role: ecs_create,
           availability_zone: "eu-de-02",
           ecs_name: "mesos-master",
@@ -208,9 +208,19 @@
       minutes: 4
     when: master_public_ip is not defined
 
+
+#Populate Inventory    
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - secgroups
+    - securitygroup_facts
+    - ecs
+    - eip
+    - server_facts
+  tasks:  
   - include: populate_otc_inventory.yml
-    when: master_public_ip is defined
-    
 
 #SW-config of MASTER&ZOOKEEPER
 - hosts: mesos-masters
@@ -244,6 +254,7 @@
     - include_vars: ../roles/mesos/defaults/main.yml
   roles:
     - { role: mesos, mesos_install_mode: master, mesos_port: 5050 }
+
 
 
 #CREATE AGENT AUTOSCALING GROUP
@@ -301,3 +312,4 @@
           secgroups: '[{"id": "{{ secfact_agent[0] }}"}]',
           when: current_as_groups|length == 0
       }
+    - vpc_disable_checks

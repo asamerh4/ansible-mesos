@@ -300,6 +300,7 @@
         - echo 'export MESOS_EXECUTOR_REGISTRATION_TIMEOUT="5mins"'               >> /etc/default/mesos-slave
         - echo 'export MESOS_PORT="5051"'                                         >> /etc/default/mesos-slave
         - echo 'export MESOS_WORK_DIR="/var/lib/mesos"'                           >> /etc/default/mesos-slave
+        - echo 'export MESOS_DOCKER_REMOVE_DELAY="5mins"'                         >> /etc/default/mesos-slave
         - systemctl start docker
         - systemctl enable docker
         - systemctl start mesos-slave

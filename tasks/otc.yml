@@ -263,28 +263,43 @@
     current_as_groups: "{{ asgroups['json']['scaling_groups'] }}"
     agent_asconfig_userdata: |
       #cloud-config
+      write_files:
+        - content: |
+            [default]
+            output = json
+            region = eu-de
+          owner: linux:linux
+          permissions: '0644'
+          path: /home/linux/.aws/config
+        - content: |
+            [default]
+            aws_access_key_id = {{ aws_access_key_id }}
+            aws_secret_access_key = {{ aws_secret_access_key }}
+          owner: linux:linux
+          permissions: '0644'
+          path: /home/linux/.aws/credentials
       runcmd:
         - mount -t tmpfs -o size=10g tmpfs /var/lib/docker
         - mount -t tmpfs -o size=10g tmpfs /var/lib/mesos
         - mount -t tmpfs -o size=10g tmpfs /var/log/mesos
-        - echo 'tmpfs /var/lib/docker tmpfs size=10g 0 0'                                             >> /etc/fstab
-        - echo 'tmpfs /var/lib/mesos tmpfs size=10g 0 0'                                              >> /etc/fstab
-        - echo 'tmpfs /var/log/mesos tmpfs size=10g 0 0'                                              >> /etc/fstab
+        - echo 'tmpfs /var/lib/docker tmpfs size=10g 0 0'                         >> /etc/fstab
+        - echo 'tmpfs /var/lib/mesos tmpfs size=10g 0 0'                          >> /etc/fstab
+        - echo 'tmpfs /var/log/mesos tmpfs size=10g 0 0'                          >> /etc/fstab
         - rm -rf /etc/mesos
         - rm -rf /etc/mesos-master/
         - rm -rf /etc/mesos-slave/
         - rm /etc/default/mesos*
-        - echo 'CLUSTER="{{ cluster_id }}"'                                                            > /etc/default/mesos
-        - echo 'IP="'$(hostname -I | cut -d" " -f 1)'"'                                               >> /etc/default/mesos
-        - echo 'LOGS="/var/log/mesos"'                                                                >> /etc/default/mesos
-        - echo 'ULIMIT="-n 8192"'                                                                     >> /etc/default/mesos
-        - echo 'ZK="zk://{{ master_private_ip }}:2181/mesos"'                                         >> /etc/default/mesos
-        - echo 'export MESOS_HOSTNAME="'$(hostname -I | cut -d" " -f 1)'"'                             > /etc/default/mesos-slave
-        - echo 'export MESOS_MASTER="zk://{{ master_private_ip }}:2181/mesos"'                        >> /etc/default/mesos-slave
-        - echo 'export MESOS_CONTAINERIZERS="docker,mesos"'                                           >> /etc/default/mesos-slave
-        - echo 'export MESOS_EXECUTOR_REGISTRATION_TIMEOUT="5mins"'                                   >> /etc/default/mesos-slave
-        - echo 'export MESOS_PORT="5051"'                                                             >> /etc/default/mesos-slave
-        - echo 'export MESOS_WORK_DIR="/var/lib/mesos"'                                               >> /etc/default/mesos-slave
+        - echo 'CLUSTER="{{ cluster_id }}"'                                        > /etc/default/mesos
+        - echo 'IP="'$(hostname -I | cut -d" " -f 1)'"'                           >> /etc/default/mesos
+        - echo 'LOGS="/var/log/mesos"'                                            >> /etc/default/mesos
+        - echo 'ULIMIT="-n 8192"'                                                 >> /etc/default/mesos
+        - echo 'ZK="zk://{{ master_private_ip }}:2181/mesos"'                     >> /etc/default/mesos
+        - echo 'export MESOS_HOSTNAME="'$(hostname -I | cut -d" " -f 1)'"'         > /etc/default/mesos-slave
+        - echo 'export MESOS_MASTER="zk://{{ master_private_ip }}:2181/mesos"'    >> /etc/default/mesos-slave
+        - echo 'export MESOS_CONTAINERIZERS="docker,mesos"'                       >> /etc/default/mesos-slave
+        - echo 'export MESOS_EXECUTOR_REGISTRATION_TIMEOUT="5mins"'               >> /etc/default/mesos-slave
+        - echo 'export MESOS_PORT="5051"'                                         >> /etc/default/mesos-slave
+        - echo 'export MESOS_WORK_DIR="/var/lib/mesos"'                           >> /etc/default/mesos-slave
         - systemctl start docker
         - systemctl enable docker
         - systemctl start mesos-slave

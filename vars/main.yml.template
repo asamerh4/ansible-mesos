@@ -1,17 +1,9 @@
 ---
-dockerhub_email:
-dockerhub_password:
-
-aws_access_key: ""
-aws_secret_key: ""
-aws_subnet_az: ""
-vpc_subnet_id: ""
-#zookeeper_hostnames: ""
-#mesos_zookeeper_masters: ""
-ec2_instance_type: ""
-ec2_image_id: ""
-iam_role: ""
+cluster_id: ""
+mesos_cluster_name: "{{ cluster_id }}"
+vpc_id: ""
+image_id: ""
+subnet_cidr: ""
 ramdisk_gb: ""
-key_file: ""
-mesos_cluster_name: ""
-docker_targz: ""
+aws_access_key_id: ""
+aws_secret_access_key: ""

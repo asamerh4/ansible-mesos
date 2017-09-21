@@ -178,12 +178,29 @@
   vars:
     ecs_user_data: |
       #cloud-config
+      #NATing for agents - tbd
       runcmd:
         - echo 'IPADDR1=192.168.0.2' >> /etc/sysconfig/network-scripts/ifcfg-eth
         - systemctl restart network
-        - iptables -t nat -A POSTROUTING \! -d 192.168.0.0/24 -o eth0 -j MASQUERADE
+        - iptables -t nat -A POSTROUTING \! -d {{ subnet_cidr }} -o eth0 -j MASQUERADE
         - systemctl enable iptables
         - service iptables save
+      #OTC-S3 credentials
+      write_files:
+        - content: |
+            [default]
+            output = json
+            region = eu-de
+          owner: linux:linux
+          permissions: '0644'
+          path: /home/linux/.aws/config
+        - content: |
+            [default]
+            aws_access_key_id = {{ aws_access_key_id }}
+            aws_secret_access_key = {{ aws_secret_access_key }}
+          owner: linux:linux
+          permissions: '0644'
+          path: /home/linux/.aws/credentials
 
   roles:
     - secgroups
@@ -305,6 +322,8 @@
         - systemctl enable docker
         - systemctl start mesos-slave
         - systemctl enable mesos-slave
+        - systemctl start nginx
+        - systemctl enable nginx
   roles:   
     - { role: asconfig_create,
           asconfig_name: "agent",

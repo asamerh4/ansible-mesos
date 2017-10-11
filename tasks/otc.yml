@@ -46,6 +46,16 @@
     - { role: secgrouprule_create,
           secgrouprule_direction: "ingress",
           secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "8080",
+          secgrouprule_port_range_max: "8080",
+          secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public|length == 0 
+      }
+    - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
           secgrouprule_protocol: "",
           secgrouprule_port_range_min: "",
           secgrouprule_port_range_max: "",
@@ -129,6 +139,26 @@
           when: secfact_master|length == 0
       }
     - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "19999",
+          secgrouprule_port_range_max: "19999",
+          secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
+      }
+    - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "39999",
+          secgrouprule_port_range_max: "39999",
+          secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
+      }
+    - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
@@ -165,6 +195,16 @@
           when: secfact_agent|length == 0
       }
     - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "29999",
+          secgrouprule_port_range_max: "29999",
+          secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
+      }
+    - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
@@ -173,20 +213,46 @@
       }
  
 
-#CREATE MASTER&ZOOKEEPER VM
+#CREATE MASTER, JENKINS & ZOOKEEPER VM
 - hosts: localhost
   vars:
     ecs_user_data: |
       #cloud-config
-      #NATing for agents - tbd
       runcmd:
+        ## NATing for agents - TBD
         - echo 'IPADDR1=192.168.0.2' >> /etc/sysconfig/network-scripts/ifcfg-eth
         - systemctl restart network
         - iptables -t nat -A POSTROUTING \! -d {{ subnet_cidr }} -o eth0 -j MASQUERADE
         - systemctl enable iptables
         - service iptables save
-      #OTC-S3 credentials
+        ## Alluxio Worker config
+        - echo alluxio.master.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.address=s3a://alluxio-tests/tests                  >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.user.block.size.bytes.default=4MB                          >> /opt/alluxio/conf/alluxio-site.properties
+        - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
+        - echo aws.secretKey={{ aws_secret_access_key }}                          >> /opt/alluxio/conf/alluxio-site.properties
+        ## Jenkins conf - TBD (add seperate jenkins user)
+        #- mkdir /var/lib/jenkins
+        #- cp -R /home/linux/.jenkins/plugins /var/lib/jenkins/
+        #- chown -R linux:linux /var/lib/jenkins
+        #- chown -R linux:linux /var/cache/jenkins
+        #- chown -R linux:linux /var/log/jenkins
+        #- systemctl start jenkins
+        #- systemctl enable jenkins
+        ## Instance-Metadata proxy cache
+        - systemctl start nginx
+        - systemctl enable nginx
+        ## alluxio master and proxy service
+        - systemctl start alluxio-master
+        - systemctl enable alluxio-master
+        - systemctl start alluxio-proxy
+        - systemctl enable alluxio-proxy
+        ## add linux user to alluxio group
+        - usermod -aG alluxio linux
       write_files:
+        ## set OTC-S3 credentials
         - content: |
             [default]
             output = json
@@ -220,9 +286,9 @@
           when: master_public_ip is not defined
       }
   tasks:
-  - name: wait for 4 minutes (ECS)
+  - name: wait for 5 minutes (ECS)
     pause:
-      minutes: 4
+      minutes: 5
     when: master_public_ip is not defined
 
 
@@ -281,6 +347,7 @@
     agent_asconfig_userdata: |
       #cloud-config
       write_files:
+        ## set OTC-S3 credentials
         - content: |
             [default]
             output = json
@@ -296,12 +363,30 @@
           permissions: '0644'
           path: /home/linux/.aws/credentials
       runcmd:
+        ## Alluxio RAMFS -> no swap
+        - mkdir /var/lib/alluxio
+        - mount -t ramfs -o size=12G ramfs /var/lib/alluxio
+        - chmod a+w /var/lib/alluxio
+        - echo 'ramfs /var/lib/alluxio ramfs size=12g 0 0'                        >> /etc/fstab
+        ## Alluxio Worker config
+        - echo alluxio.worker.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.master.hostname={{ master_private_ip }}                    >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.worker.memory.size=12GB                                    >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.worker.tieredstore.level0.dirs.path=/var/lib/alluxio       >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.address=s3a://alluxio-tests/tests                  >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.user.block.size.bytes.default=4MB                          >> /opt/alluxio/conf/alluxio-site.properties
+        - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
+        - echo aws.secretKey={{ aws_secret_access_key }}                          >> /opt/alluxio/conf/alluxio-site.properties
+        ## docker & mesos TMPFS -> swap in case of fillup (tbd.)
         - mount -t tmpfs -o size=10g tmpfs /var/lib/docker
         - mount -t tmpfs -o size=10g tmpfs /var/lib/mesos
         - mount -t tmpfs -o size=10g tmpfs /var/log/mesos
         - echo 'tmpfs /var/lib/docker tmpfs size=10g 0 0'                         >> /etc/fstab
         - echo 'tmpfs /var/lib/mesos tmpfs size=10g 0 0'                          >> /etc/fstab
         - echo 'tmpfs /var/log/mesos tmpfs size=10g 0 0'                          >> /etc/fstab
+        ## mesos-agent conf
         - rm -rf /etc/mesos
         - rm -rf /etc/mesos-master/
         - rm -rf /etc/mesos-slave/
@@ -318,10 +403,19 @@
         - echo 'export MESOS_PORT="5051"'                                         >> /etc/default/mesos-slave
         - echo 'export MESOS_WORK_DIR="/var/lib/mesos"'                           >> /etc/default/mesos-slave
         - echo 'export MESOS_DOCKER_REMOVE_DELAY="5mins"'                         >> /etc/default/mesos-slave
+        ## docker & mesos-agent service
         - systemctl start docker
         - systemctl enable docker
         - systemctl start mesos-slave
         - systemctl enable mesos-slave
+        ## alluxio worker and proxy service
+        - systemctl start alluxio-worker
+        - systemctl enable alluxio-worker
+        - systemctl start alluxio-proxy
+        - systemctl enable alluxio-proxy
+        ## add linux user to alluxio group
+        - usermod -aG alluxio linux
+        ## Instance-Metadata proxy cache
         - systemctl start nginx
         - systemctl enable nginx
   roles:   
@@ -338,7 +432,7 @@
     - { role: asgroup_create,
           asgroup_name: "agents",
           asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
-          desired: "1",
+          desired: "0",
           min: "0",
           max: "1",
           cooldown: "200",

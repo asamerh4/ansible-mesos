@@ -47,8 +47,8 @@
           secgrouprule_direction: "ingress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_protocol: "tcp",
-          secgrouprule_port_range_min: "8080",
-          secgrouprule_port_range_max: "8080",
+          secgrouprule_port_range_min: "443",
+          secgrouprule_port_range_max: "443",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
           secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
           when: secfact_public|length == 0 

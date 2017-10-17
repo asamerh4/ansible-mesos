@@ -432,7 +432,7 @@
     - { role: asgroup_create,
           asgroup_name: "agents",
           asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
-          desired: "0",
+          desired: "1",
           min: "0",
           max: "1",
           cooldown: "200",

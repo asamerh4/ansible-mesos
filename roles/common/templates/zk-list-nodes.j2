@@ -1,1 +1,1 @@
-echo "{{ mesos_otc_master | join(":2181,") ~ ':2181' }}"
+echo "{{ groups['private-zk-nodes'] | join(":2181,") ~ ':2181' }}"

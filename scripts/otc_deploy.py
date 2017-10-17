@@ -52,6 +52,5 @@ if args.action == "provision":
           "-e", "n_vms={}".format(arg_vars["n"]),
           "-e", "mesos_zookeeper={}".format(arg_vars["zookeeper"]),
           "-e", "mesos_master={}".format(arg_vars["mesos_master"]),
-          "-e", "mesos_otc_master=160.44.205.74",		  
           "-i", ",",
           "tasks/otc.yml"])

@@ -1,0 +1,2 @@
+---
+query_vpc: "vpcs[?name=='{{ vpc_toplevel_name }}'].id"

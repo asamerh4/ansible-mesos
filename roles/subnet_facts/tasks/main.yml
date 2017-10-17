@@ -1,0 +1,3 @@
+---
+- name: fact_subnet
+  set_fact: subnet_fact="{{ subnetlist['json']|json_query(query_sub) }}"

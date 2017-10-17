@@ -1,0 +1,28 @@
+- name: Get VPC-Router
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/routers"
+    method: GET
+    body_format: raw
+    follow_redirects: all
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+    #body: "{{ lookup('template', '../templates/request.json.j2')|to_json }}"
+  register: vpc_router
+
+- name: wait for 15 secs
+  pause:
+    seconds: 15
+  
+- name: Add Routes to Router
+  uri:
+    url: "{{ AUTH_URL_VPC }}/v2.0/routers/{{ vpc_router['json']['routers'][0]['id'] }}"
+    method: PUT
+    return_content: yes
+    validate_certs: yes
+    status_code: 200
+    body_format: json
+    body: "{{ lookup('template', '../templates/request.json.j2') }}"
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"

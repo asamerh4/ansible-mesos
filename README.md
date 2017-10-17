@@ -4,7 +4,7 @@ playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 
 ##  what you get
 - mesos cluster with one master (multi-master HA setup coming soon) and private agents within an autoscaling group (private IPs)
-- distributed alluxio inMemory-FS accross agents (useable via alluxio-proxy REST API at `localhost:39999` on every cluster-node)
+- distributed alluxio inMemory-FS accross mesos-agents (useable via alluxio-proxy REST API at `localhost:39999` on every cluster-node)
 - alluxio underFS configured for S3 (OBS)
 - readonly ssl enabled webUI & dashboards of `mesos` and `alluxio`
 - chached nginx proxy for otc-instance metadata endpoints accessible at every node at  `localhost/user-data`
@@ -48,10 +48,11 @@ user-access keys consist of `access_key_id` and  `secret_access_key` and must be
     - existing ssh-key
        - ansible expects ssh-key under ~/mesos130.pem -> change this in `scripts/otc_deploy.py`
     - existing VPC (VPC-ID)
-       - deafult settings
-    - existing subnet within VPC (subnet-ID)
-       - subnet-cidr: 192.168.0.0/24
+       - default settings
     - OTC Machine-Image (Image-ID)
        - centos7.2-docker1.17-mesos1.4.0-jenkins2.79-alluxio1.6-https
        - centos7.2 with docker engine 1.17, mesos 1.4.0, alluxio 1.6 jenkins 2.7, awscli, nginx (public readonly sites via ssl), no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default
        - shared with public `on request`
+
+
+

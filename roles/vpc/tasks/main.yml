@@ -1,9 +1,9 @@
-- name: Request secgroup list from API
+- name: Request vpc list from AUTH API
   uri:
-    url: "{{ AUTH_URL_VPC }}/v1/{{ PROJECT_ID }}/security-groups"
+    url: "{{ AUTH_URL_VPC }}/v1/{{ PROJECT_ID }}/vpcs"
     method: GET
     return_content: yes
     validate_certs: yes
     HEADER_Content-Type: "application/json"
     HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
-  register: secgrouplist
+  register: vpclist

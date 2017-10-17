@@ -1,32 +1,77 @@
 ---
-#FACTS
+#FACTS0
 - hosts: localhost
   pre_tasks:
     - include_vars: ../vars/main.yml
-  
   roles:
     - token
-    - secgroups
+    - vpc
+    - vpc_facts
+
+#CREATE VPC
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - { role: vpc_create,
+          vpc_name: "{{ vpc_toplevel_name }}",
+          vpc_net: "{{ vpc_cidr }}",
+          when: vpc_fact|length == 0
+      }
+
+#FACTS1
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - vpc
+    - vpc_facts
+    - subnet
+    - subnet_facts
+    
+#CREATE SUBNET
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - { role: subnet_create,
+          subnet_name: "{{ cluster_id }}",
+          subnet_net: "{{ subnet_cidr }}",
+          subnet_gateway: "{{ subnet_gate }}",
+          subnet_primary_dns: "100.125.4.25",
+          subnet_secondary_dns: "8.8.8.8",
+          vpc_id: "{{ vpc_fact[0] }}",
+          when: subnet_fact|length == 0
+      }
+    - { role: vpc_subnet_router_update,
+          when: subnet_fact|length == 0
+      }
+
+#FACTS2
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - vpc
+    - vpc_facts
+    - subnet
+    - subnet_facts
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - {role: secgroups, vpc_id: "{{ vpc_fact[0] }}"}
     - securitygroup_facts
     - ecs
     - eip
     - server_facts
     - asgroups
-  
-#CREATE SUBNET & SECGROUPS
+
+#CREATE SECGROUPS
 - hosts: localhost
   pre_tasks:
     - include_vars: ../vars/main.yml
   roles:
-    #- token
-    # - { role: subnet_create,
-          # subnet_name: "{{ cluster_id }}",
-          # subnet_net: "{{ subnet_cidr }}",
-          # subnet_gateway: "192.168.0.1",
-          # subnet_primary_dns: "100.125.4.25",
-          # subnet_secondary_dns: "8.8.8.8",
-          # availability_zone: "eu-de-02",
-      # }
 #SECGROUP-PUBLIC
     - { role: secgroup_create,
           secgroup_name: "{{ cluster_id }}-public",
@@ -220,17 +265,17 @@
       #cloud-config
       runcmd:
         ## NATing for agents - TBD
-        - echo 'IPADDR1=192.168.0.2' >> /etc/sysconfig/network-scripts/ifcfg-eth
+        - echo 'IPADDR1={{ vpc_nexthop_ip }}' >> /etc/sysconfig/network-scripts/ifcfg-eth
         - systemctl restart network
         - iptables -t nat -A POSTROUTING \! -d {{ subnet_cidr }} -o eth0 -j MASQUERADE
         - systemctl enable iptables
         - service iptables save
         ## Alluxio Worker config
         - echo alluxio.master.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.underfs.address=s3a://alluxio-tests/tests                  >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.user.block.size.bytes.default=4MB                          >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.secretKey={{ aws_secret_access_key }}                          >> /opt/alluxio/conf/alluxio-site.properties
         ## Jenkins conf - TBD (add seperate jenkins user)
@@ -269,20 +314,19 @@
           path: /home/linux/.aws/credentials
 
   roles:
-    - secgroups
+    - {role: secgroups, vpc_id: "{{ vpc_fact[0] }}"}
     - securitygroup_facts
     - { role: ecs_create,
-          availability_zone: "eu-de-02",
           ecs_name: "mesos-master",
           ecs_volumesize: "10",
           ecs_volumetype: "SSD",
           flavor_id: "highmem2",
           secgroup_ids: '[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]',
           ecs_ipaddress: "",
-          subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
-          #"{{ subnet['json']['subnet']['id'] }}",
+          vpc_id: "{{ vpc_fact[0] }}",
+          subnet_id: "{{ subnet_fact[0] }}",
           ecs_adminpass: "",
-          ecs_adminkey: "mesos130-api",
+          ecs_adminkey: "{{ otc_ssh_key_name }}",
           when: master_public_ip is not defined
       }
   tasks:
@@ -297,7 +341,7 @@
   pre_tasks:
     - include_vars: ../vars/main.yml
   roles:
-    - secgroups
+    - {role: secgroups, vpc_id: "{{ vpc_fact[0] }}"}
     - securitygroup_facts
     - ecs
     - eip
@@ -373,10 +417,10 @@
         - echo alluxio.master.hostname={{ master_private_ip }}                    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.worker.memory.size=12GB                                    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.worker.tieredstore.level0.dirs.path=/var/lib/alluxio       >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.underfs.address=s3a://alluxio-tests/tests                  >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.user.block.size.bytes.default=4MB                          >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.secretKey={{ aws_secret_access_key }}                          >> /opt/alluxio/conf/alluxio-site.properties
         ## docker & mesos TMPFS -> swap in case of fillup (tbd.)
@@ -425,7 +469,7 @@
           #image_id: from vars
           disk_size: "10",
           disk_type: "SSD",
-          key: "mesos130-api",
+          key: "{{ otc_ssh_key_name }}",
           userdata: "{{ agent_asconfig_userdata }}",
           when: current_as_groups|length == 0
       }
@@ -436,8 +480,8 @@
           min: "0",
           max: "1",
           cooldown: "200",
-          subnet_id: "cb73b892-5fae-4044-bd23-229974d0d76c", 
-          #"{{ subnet['json']['subnet']['id'] }}",
+          vpc_id: "{{ vpc_fact[0] }}",
+          subnet_id: "{{ subnet_fact[0] }}",
           secgroups: '[{"id": "{{ secfact_agent[0] }}"}]',
           when: current_as_groups|length == 0
       }

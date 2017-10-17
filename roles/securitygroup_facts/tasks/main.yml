@@ -1,9 +1,11 @@
 ---
 - name: fact_zoo
-  set_fact: secfact_zoo="{{ secgrouplistvpc['json']|json_query(query_zoo) }}"
+  set_fact: secfact_zoo="{{ secgrouplist['json']|json_query(query_zoo) }}"
 - name: fact_master
-  set_fact: secfact_master="{{ secgrouplistvpc['json']|json_query(query_master) }}"
+  set_fact: secfact_master="{{ secgrouplist['json']|json_query(query_master) }}"
 - name: fact_agent
-  set_fact: secfact_agent="{{ secgrouplistvpc['json']|json_query(query_agent) }}"
+  set_fact: secfact_agent="{{ secgrouplist['json']|json_query(query_agent) }}"
 - name: fact_public
-  set_fact: secfact_public="{{ secgrouplistvpc['json']|json_query(query_public) }}"
+  set_fact: secfact_public="{{ secgrouplist['json']|json_query(query_public) }}"
+  
+#- debug: msg="{{ secgrouplist }}"

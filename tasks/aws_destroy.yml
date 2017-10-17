@@ -1,9 +1,0 @@
----
-- hosts: localhost
-  pre_tasks:
-    - include_vars: ../defaults/main.yml
-    - include_vars: ../vars/main.yml
-    - include: check_ansible_version.yml
-    - include: populate_inventory.yml
-  roles:
-    - aws

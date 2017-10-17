@@ -1,4 +1,0 @@
----
-zookeeper_hostnames: "{{ [groups['private-zk-nodes'], 2181] | to_zookeeper_cluster_string }}"
-zookeeper_mesos_uri: "zk://{{ zookeeper_hostnames }}/mesos"
-zookeeper_marathon_uri: "zk://{{ zookeeper_hostnames }}/mesos_marathon"

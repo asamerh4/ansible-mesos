@@ -38,8 +38,8 @@
           subnet_name: "{{ cluster_id }}",
           subnet_net: "{{ subnet_cidr }}",
           subnet_gateway: "{{ subnet_gate }}",
-          subnet_primary_dns: "100.125.4.25",
-          subnet_secondary_dns: "8.8.8.8",
+          subnet_primary_dns: "{{ subnet_dns1 }}",
+          subnet_secondary_dns: "{{ subnet_dns2 }}",
           vpc_id: "{{ vpc_fact[0] }}",
           when: subnet_fact|length == 0
       }
@@ -65,7 +65,7 @@
     - ecs
     - eip
     - server_facts
-    - asgroups
+    - autoscaling_facts
 
 #CREATE SECGROUPS
 - hosts: localhost
@@ -317,10 +317,10 @@
     - {role: secgroups, vpc_id: "{{ vpc_fact[0] }}"}
     - securitygroup_facts
     - { role: ecs_create,
-          ecs_name: "mesos-master",
-          ecs_volumesize: "10",
-          ecs_volumetype: "SSD",
-          flavor_id: "highmem2",
+          ecs_name: "{{ cluster_id }}-master",
+          ecs_volumesize: "{{ ecs_disk_size }}",
+          ecs_volumetype: "{{ ecs_disk_type }}",
+          flavor_id: "{{ ecs_flavour }}",
           secgroup_ids: '[{"id": "{{ secfact_public[0] }}"},{"id": "{{ secfact_master[0] }}"},{"id": "{{ secfact_zoo[0] }}"}]',
           ecs_ipaddress: "",
           vpc_id: "{{ vpc_fact[0] }}",
@@ -387,7 +387,6 @@
 #CREATE AGENT AUTOSCALING GROUP
 - hosts: localhost
   vars:
-    current_as_groups: "{{ asgroups['json']['scaling_groups'] }}"
     agent_asconfig_userdata: |
       #cloud-config
       write_files:
@@ -464,25 +463,25 @@
         - systemctl enable nginx
   roles:   
     - { role: asconfig_create,
-          asconfig_name: "agent",
-          flavor: "highmem2",
+          asconfig_name: "{{ cluster_id }}",
+          flavor: "{{ ecs_flavour }}",
           #image_id: from vars
-          disk_size: "10",
-          disk_type: "SSD",
+          disk_size: "{{ ecs_disk_size }}",
+          disk_type: "{{ ecs_disk_type }}",
           key: "{{ otc_ssh_key_name }}",
           userdata: "{{ agent_asconfig_userdata }}",
-          when: current_as_groups|length == 0
+          when: asconfigs_fact|length == 0
       }
     - { role: asgroup_create,
-          asgroup_name: "agents",
+          asgroup_name: "{{ cluster_id }}",
           asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
-          desired: "1",
+          desired: "0",
           min: "0",
           max: "1",
           cooldown: "200",
           vpc_id: "{{ vpc_fact[0] }}",
           subnet_id: "{{ subnet_fact[0] }}",
           secgroups: '[{"id": "{{ secfact_agent[0] }}"}]',
-          when: current_as_groups|length == 0
+          when: asgroups_fact|length == 0
       }
     - vpc_disable_checks

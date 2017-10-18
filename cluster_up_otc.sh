@@ -12,5 +12,5 @@ python scripts/otc_deploy.py \
   -ok mesos130-api \
   -u linux \
  eu-de \
- sentinel-3-alluxio \
+ mesos-analytics \
  provision

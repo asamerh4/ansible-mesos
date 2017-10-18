@@ -1,0 +1,3 @@
+---
+query_asg: "scaling_groups[?scaling_group_name=='{{ cluster_id }}'].scaling_group_id"
+query_asc: "scaling_configurations[?scaling_configuration_name=='{{ cluster_id }}'].scaling_configuration_id"

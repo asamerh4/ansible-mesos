@@ -1,6 +1,6 @@
 - name: Request ecs list from AUTH API
   uri:
-    url: "{{ AUTH_URL_ECS }}/servers/detail?name=mesos-master"
+    url: "{{ AUTH_URL_ECS }}/servers/detail?name={{ cluster_id }}-master"
     method: GET
     return_content: yes
     validate_certs: yes

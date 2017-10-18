@@ -1,0 +1,24 @@
+- name: Request asgroup list with search criteria from API
+  uri:
+    url: "{{ AUTH_URL_VPC }}/autoscaling-api/v1/{{ PROJECT_ID }}/scaling_group"
+    method: GET
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+  register: asgroups
+
+- name: Request asconfig list with search criteria from API
+  uri:
+    url: "{{ AUTH_URL_VPC }}/autoscaling-api/v1/{{ PROJECT_ID }}/scaling_configuration"
+    method: GET
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+  register: asconfigs
+
+- name: ASG-facts
+  set_fact: asgroups_fact="{{ asgroups['json']|json_query(query_asg) }}"
+- name: ASC-facts
+  set_fact: asconfigs_fact="{{ asconfigs['json']|json_query(query_asc) }}"

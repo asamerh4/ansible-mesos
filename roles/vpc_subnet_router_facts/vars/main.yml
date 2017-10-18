@@ -1,0 +1,3 @@
+---
+query_router: "routers[?name=='{{ cluster_id }}'].id"
+query_routes: "routers[?name=='{{ cluster_id }}'].routes[]"

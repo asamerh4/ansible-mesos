@@ -43,8 +43,11 @@
           vpc_id: "{{ vpc_fact[0] }}",
           when: subnet_fact|length == 0
       }
+    - subnet
+    - subnet_facts
+    - vpc_subnet_router_facts
     - { role: vpc_subnet_router_update,
-          when: subnet_fact|length == 0
+          when: routes_fact|length == 0
       }
 
 #FACTS2

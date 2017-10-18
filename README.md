@@ -10,10 +10,12 @@ playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 - chached nginx proxy for otc-instance metadata endpoints accessible at every node at  `localhost/user-data`
 - jenkins instance for static processing pipelines (deactivated by default)
 
+![alt text](docs/whatyouget.png "whatyouget")
+
 ## why you want this
 - for running batch-processing workloads on mesos from and to S3 optionally using an InMemory cache for intermediate data or results
-- doing processing on `fast` InMemory-data with mesos-frameworks like `spark` or `mesos-batch` inside docker containers
-- to run analytics on selected datasets from S3
+- doing batch or distributed processing using `fast` InMemory-data with mesos-frameworks like `spark`, `storm` or `mesos-batch`
+- to run analytics on selected and optionally chached datasets from S3
 
 ## what you need
 - ansible control host with internet access (preferably linuxOS)
@@ -45,14 +47,11 @@ playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 - OTC Access keys with read/write permissions for S3
 user-access keys consist of `access_key_id` and  `secret_access_key` and must be generated within the OTC web-console. It's recommanded to generate a seperate user with read/write permissions to OBS (S3) 
 - OTC-static conf needed:
-    - existing ssh-key
-       - ansible expects ssh-key under ~/mesos130.pem -> change this in `scripts/otc_deploy.py`
-    - existing VPC (VPC-ID)
-       - default settings
+    - existing ssh-key, linked to existing OTC key-pair
     - OTC Machine-Image (Image-ID)
        - centos7.2-docker1.17-mesos1.4.0-jenkins2.79-alluxio1.6-https
        - centos7.2 with docker engine 1.17, mesos 1.4.0, alluxio 1.6 jenkins 2.7, awscli, nginx (public readonly sites via ssl), no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default
-       - shared with public `on request`
+       - shared with you within OTC `on request`
 
 
 

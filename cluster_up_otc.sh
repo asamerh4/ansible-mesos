@@ -12,5 +12,5 @@ python scripts/otc_deploy.py \
   -ok mesos130-api \
   -u linux \
  eu-de \
- mesos-analytics123 \
+ analytics01 \
  provision

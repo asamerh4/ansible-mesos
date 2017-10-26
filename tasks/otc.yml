@@ -253,6 +253,16 @@
           when: secfact_master|length == 0
       }
     - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "30000",
+          secgrouprule_port_range_max: "50000",
+          secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_master|length == 0
+      }
+    - { role: secgrouprule_create,
           secgrouprule_direction: "egress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
@@ -277,6 +287,7 @@
         - echo alluxio.master.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.security.login.username=alluxio                            >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
@@ -290,6 +301,7 @@
         #- systemctl start jenkins
         #- systemctl enable jenkins
         ## Instance-Metadata proxy cache
+        - sed -i 's;XXX_TITLE_XXXX;'{{ cluster_id }}';g' /usr/share/nginx/html/index.html
         - systemctl start nginx
         - systemctl enable nginx
         ## alluxio master and proxy service
@@ -421,6 +433,7 @@
         - echo alluxio.worker.tieredstore.level0.dirs.path=/var/lib/alluxio       >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.security.login.username=alluxio                            >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties

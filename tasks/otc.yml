@@ -246,18 +246,8 @@
           secgrouprule_direction: "ingress",
           secgrouprule_ethertype: "IPv4",
           secgrouprule_protocol: "tcp",
-          secgrouprule_port_range_min: "29999",
-          secgrouprule_port_range_max: "29999",
-          secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
-          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
-          when: secfact_master|length == 0
-      }
-    - { role: secgrouprule_create,
-          secgrouprule_direction: "ingress",
-          secgrouprule_ethertype: "IPv4",
-          secgrouprule_protocol: "tcp",
-          secgrouprule_port_range_min: "30000",
-          secgrouprule_port_range_max: "50000",
+          secgrouprule_port_range_min: "10000",
+          secgrouprule_port_range_max: "60000",
           secgrouprule_remote_ip_prefix: "{{ subnet_cidr }}",
           secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
           when: secfact_master|length == 0
@@ -283,11 +273,13 @@
         - iptables -t nat -A POSTROUTING \! -d {{ subnet_cidr }} -o eth0 -j MASQUERADE
         - systemctl enable iptables
         - service iptables save
-        ## Alluxio Worker config
+        ## Alluxio Master config
+        - groupadd alluxio-rw
+        - usermod -aG alluxio-rw linux
         - echo alluxio.master.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.security.login.username=alluxio                            >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.security.authorization.permission.supergroup=alluxio-rw    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
@@ -309,8 +301,6 @@
         - systemctl enable alluxio-master
         - systemctl start alluxio-proxy
         - systemctl enable alluxio-proxy
-        ## add linux user to alluxio group
-        - usermod -aG alluxio linux
       write_files:
         ## set OTC-S3 credentials
         - content: |
@@ -427,13 +417,15 @@
         - chmod a+w /var/lib/alluxio
         - echo 'ramfs /var/lib/alluxio ramfs size=12g 0 0'                        >> /etc/fstab
         ## Alluxio Worker config
+        - groupadd alluxio-rw
+        - usermod -aG alluxio-rw linux
         - echo alluxio.worker.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.master.hostname={{ master_private_ip }}                    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.worker.memory.size=12GB                                    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.worker.tieredstore.level0.dirs.path=/var/lib/alluxio       >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.security.login.username=alluxio                            >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.security.authorization.permission.supergroup=alluxio-rw    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.endpoint=https://obs.eu-de.otc.t-systems.com    >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.user.block.size.bytes.default={{ alluxio_block_size }}     >> /opt/alluxio/conf/alluxio-site.properties
         - echo aws.accessKeyId={{ aws_access_key_id }}                            >> /opt/alluxio/conf/alluxio-site.properties
@@ -472,8 +464,6 @@
         - systemctl enable alluxio-worker
         - systemctl start alluxio-proxy
         - systemctl enable alluxio-proxy
-        ## add linux user to alluxio group
-        - usermod -aG alluxio linux
         ## Instance-Metadata proxy cache
         - systemctl start nginx
         - systemctl enable nginx
@@ -491,7 +481,7 @@
     - { role: asgroup_create,
           asgroup_name: "{{ cluster_id }}",
           asconfig_id: "{{ asconfig['json']['scaling_configuration_id'] }}",
-          desired: "0",
+          desired: "1",
           min: "0",
           max: "1",
           cooldown: "200",

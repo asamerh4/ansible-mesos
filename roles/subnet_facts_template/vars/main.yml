@@ -1,0 +1,2 @@
+---
+query_sub: "subnets[?name=='templates'].id"

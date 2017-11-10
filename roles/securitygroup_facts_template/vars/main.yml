@@ -1,0 +1,2 @@
+---
+query_public: "security_groups[?name=='template'].id"

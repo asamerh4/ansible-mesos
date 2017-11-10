@@ -1,0 +1,373 @@
+---
+#playbook to create a complete base-image
+#
+#FACTS0
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - token
+    - vpc
+    - vpc_facts_template
+
+#CREATE VPC
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - { role: vpc_create,
+          vpc_name: "templates",
+          vpc_net: "{{ vpc_cidr }}",
+          when: vpc_fact_template|length == 0
+      }
+
+#FACTS1
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - vpc
+    - vpc_facts_template
+    - subnet
+    - subnet_facts_template
+    
+#CREATE SUBNET
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - { role: subnet_create,
+          subnet_name: "templates",
+          subnet_net: "{{ subnet_cidr }}",
+          subnet_gateway: "{{ subnet_gate }}",
+          subnet_primary_dns: "{{ subnet_dns1 }}",
+          subnet_secondary_dns: "{{ subnet_dns2 }}",
+          vpc_id: "{{ vpc_fact_template[0] }}",
+          when: subnet_fact_template|length == 0
+      }
+    - subnet
+    - subnet_facts_template
+
+#FACTS2
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - vpc
+    - vpc_facts_template
+    - subnet
+    - subnet_facts_template
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - {role: secgroups, vpc_id: "{{ vpc_fact_template[0] }}"}
+    - securitygroup_facts_template
+    - ecs_template
+    - eip
+    - server_facts_template
+
+#CREATE SECGROUPS
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+#SECGROUP-TEMPLATE
+    - { role: secgroup_create,
+          secgroup_name: "template",
+          when: secfact_public_template|length == 0
+      }
+    - { role: secgrouprule_create,
+          secgrouprule_direction: "ingress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_protocol: "tcp",
+          secgrouprule_port_range_min: "22",
+          secgrouprule_port_range_max: "22",
+          secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public_template|length == 0
+          
+      }
+    
+
+#CREATE VM from official centos 7 base image and install all required packages
+- hosts: localhost
+  roles:
+    - {role: secgroups, vpc_id: "{{ vpc_fact_template[0] }}"}
+    - securitygroup_facts_template
+    - { role: ecs_create,
+          ecs_name: "template",
+          image_id: "{{ base_image_id }}",
+          ecs_volumesize: "{{ ecs_disk_size }}",
+          ecs_volumetype: "{{ ecs_disk_type }}",
+          flavor_id: "{{ ecs_flavour }}",
+          secgroup_ids: '[{"id": "{{ secfact_public_template[0] }}"}]',
+          ecs_ipaddress: "",
+          vpc_id: "{{ vpc_fact_template[0] }}",
+          subnet_id: "{{ subnet_fact_template[0] }}",
+          ecs_adminpass: "",
+          ecs_adminkey: "{{ otc_ssh_key_name }}",
+          when: master_public_ip is not defined
+      }
+  tasks:
+  - name: wait for 5 minutes (ECS)
+    pause:
+      minutes: 5
+    when: master_public_ip is not defined
+
+
+#Populate Inventory    
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - {role: secgroups, vpc_id: "{{ vpc_fact_template[0] }}"}
+    - securitygroup_facts_template
+    - ecs_template
+    - eip
+    - server_facts_template
+  tasks:  
+  - include: populate_otc_inventory.yml
+
+#IMAGE SW-CONF
+- hosts: template
+  remote_user: "{{ remote_user }}"
+  become: yes
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  tasks:
+  #SELINUX OFF
+  - name: disable selinux & firewalld
+    selinux: state=disabled
+  #FIREWALLD OFF
+  - name: disable firewalld
+    service: name=firewalld state=stopped enabled=no
+  #- name: clear tmp-dirs
+  #  command: rm -rf /tmp/*
+  #DOCKER REPO
+  - name: add docker repo
+    yum_repository:
+      description: docker-repository
+      name: docker-repository
+      baseurl: https://yum.dockerproject.org/repo/main/centos/7/
+      enabled: yes
+      gpgcheck: yes
+      gpgkey: https://yum.dockerproject.org/gpg
+  #DOCKER SYSTEMD
+  - name: create systemd conf-dir for docker
+    file: name=/etc/systemd/system/docker.service.d state=directory
+  - name: docker loopback-devicemapper storage-conf
+    blockinfile:
+      dest: /etc/systemd/system/docker.service.d/docker-storage.conf
+      create: yes
+      block: |
+        [Service]
+        ExecStart=
+        ExecStart=/usr/bin/dockerd -s devicemapper --storage-opt dm.loopdatasize=350G --storage-opt dm.basesize=25G --storage-opt dm.loopmetadatasize=4G
+  #EPEL
+  - name: install epel
+    yum: name=epel-release
+  #DOCKER, PIP, NGINX & tools
+  - name: install docker-engine & other tools
+    yum: name=docker-engine-17.05.0.ce-1.el7.centos.x86_64,iptables-services,htop,python-pip,nginx
+  - name: disable docker service
+    service: name=docker state=stopped enabled=no
+  - name: disable nginx service
+    service: name=nginx state=stopped enabled=no
+  - name: disable iptables service
+    service: name=iptables state=stopped enabled=no
+  #MESOS
+  - name: add mesosphere repo
+    yum: name=http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-3.noarch.rpm state=present
+  - name: install mesos 1.4.0
+    yum: name=mesos
+  - name: disable mesos-master
+    service: name=mesos-master state=stopped enabled=no
+  - name: disable mesos-agent
+    service: name=mesos-slave state=stopped enabled=no
+  #JAVA
+  - name: install jdk 8
+    yum: name=java-1.8.0-openjdk-devel
+  #ALLUXIO
+  - name: stat
+    stat: path=/opt/alluxio
+    register: stat
+  - name: download alluxio 1.6.1
+    get_url:
+      url: http://downloads.alluxio.org/downloads/files/1.6.1/alluxio-1.6.1-hadoop-2.8-bin.tar.gz
+      dest: /home/linux/alluxio.tar.gz
+    when: stat.stat.exists == False
+  - name: unpack alluxio
+    command: tar xzf /home/linux/alluxio.tar.gz chdir=/opt
+    when: stat.stat.exists == False
+    
+  - name: move alluxio to /opt
+    command: mv /opt/alluxio-1.6.1-hadoop-2.8 /opt/alluxio
+    when: stat.stat.exists == False
+  
+  - name: cleanup
+    file: name=/home/linux/alluxio.tar.gz state=absent
+ 
+  - name: create alluxio-systemd scripts
+    file: name=/usr/lib/systemd/system/alluxio-master.service state=touch
+  - name: create alluxio-systemd scripts
+    file: name=/usr/lib/systemd/system/alluxio-worker.service state=touch
+  - name: create alluxio-systemd scripts
+    file: name=/usr/lib/systemd/system/alluxio-proxy.service state=touch
+  - name: alluxio-master systemd
+    blockinfile:
+      dest: /usr/lib/systemd/system/alluxio-master.service
+      block: |
+        [Unit]
+        Description=Alluxio Master
+        After=network.target
+        [Service]
+        Type=forking
+        User=alluxio
+        Group=alluxio
+        ExecStart=/opt/alluxio/bin/alluxio-start.sh master
+        ExecStop=/opt/alluxio/bin/alluxio-stop.sh master
+        WorkingDirectory=/opt/alluxio
+        [Install]
+        WantedBy=multi-user.target
+  - name: alluxio-worker systemd
+    blockinfile:
+      dest: /usr/lib/systemd/system/alluxio-worker.service
+      block: |
+        [Unit]
+        Description=Alluxio Worker
+        After=network.target
+        [Service]
+        Type=forking
+        User=alluxio
+        Group=alluxio
+        ExecStart=/opt/alluxio/bin/alluxio-start.sh worker NoMount
+        ExecStop=/opt/alluxio/bin/alluxio-stop.sh worker
+        WorkingDirectory=/opt/alluxio
+        [Install]
+        WantedBy=multi-user.target
+  - name: alluxio-proxy systemd
+    blockinfile:
+      dest: /usr/lib/systemd/system/alluxio-proxy.service
+      block: |
+        [Unit]
+        Description=Alluxio Proxy
+        After=network.target
+        [Service]
+        Type=forking
+        User=alluxio
+        Group=alluxio
+        ExecStart=/opt/alluxio/bin/alluxio-start.sh proxy
+        ExecStop=/opt/alluxio/bin/alluxio-stop.sh proxy
+        WorkingDirectory=/opt/alluxio
+        [Install]
+        WantedBy=multi-user.target
+  - name: disable alluxio-master
+    service: name=alluxio-master state=stopped enabled=no
+  - name: disable alluxio-worker
+    service: name=alluxio-worker state=stopped enabled=no
+  - name: disable alluxio-proxy
+    service: name=alluxio-proxy state=stopped enabled=no
+  #SPARK
+  - name: spark stat
+    stat: path=/opt/spark
+    register: spark_stat
+  - name: download spark 2.2.0
+    get_url:
+      url: http://mirror.klaus-uwe.me/apache/spark/spark-2.2.0/spark-2.2.0-bin-hadoop2.7.tgz
+      dest: /home/linux/spark-2.2.0-bin-hadoop2.7.tgz
+    when: spark_stat.stat.exists == False
+  - name: unpack spark
+    command: tar xzf /home/linux/spark-2.2.0-bin-hadoop2.7.tgz chdir=/opt
+    when: spark_stat.stat.exists == False   
+  - name: move spark to /opt
+    command: mv /opt/spark-2.2.0-bin-hadoop2.7 /opt/spark
+    when: spark_stat.stat.exists == False
+  - name: cleanup
+    file: name=/home/linux/spark-2.2.0-bin-hadoop2.7.tgz state=absent
+ 
+  #SPARK & ALLUXIO default conf
+  - name: libmesos.so entry
+    lineinfile: dest=/opt/spark/conf/spark-env.sh create=yes line="export MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so"
+  - name: spark-home entry
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.mesos.executor.home /opt/spark"
+  - name: alluxio-client entry to spark-defaults (1)
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.driver.extraClassPath /opt/alluxio/client/default/alluxio-1.6.1-default-client.jar"
+  - name: alluxio-client entry to spark-defaults (2)
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.executor.extraClassPath /opt/alluxio/client/default/alluxio-1.6.1-default-client.jar"
+    
+  #CHOWN
+  - name: spark chown to user linux
+    command: chown -R linux:linux /opt/spark
+  - name: alluxio user
+    user:
+      name: alluxio
+  - name: alluxio chown to user alluxio
+    command: chown -R alluxio:alluxio /opt/alluxio
+  #NETWORK-ADAPTER-CFG
+  - name: net_stat
+    stat: path=/etc/sysconfig/network-scripts/ifcfg-eth
+    register: net_stat
+  - name: rename net-adapter
+    command: mv /etc/sysconfig/network-scripts/ifcfg-lan0 /etc/sysconfig/network-scripts/ifcfg-eth
+    when: net_stat.stat.exists == False
+  - name: restart networking
+    service: name=network state=restarted enabled=yes
+  #NGINX-internal conf.d
+  - name: nginx internal conf.d
+    copy:
+      src: ../templates/nginx_dashboards/conf.d/internal.conf
+      dest: /etc/nginx/conf.d/internal.conf
+  #MOTD
+  - name: motd-cleanup
+    file: name=/etc/motd state=absent
+  - name: set nice motd welcome msg
+    blockinfile:
+      dest: /etc/motd
+      create: yes
+      block: |
+       ...####...  analytics base image
+       ..#### #..  centos7.4-docker1.17-mesos1.4.0-alluxio1.6.1-spark2.2.0 {{ lookup('pipe','date') }}
+       .####   #.  github.com/asamerh4/ansible-mesos
+      marker: " "
+
+# IMAGE CREATION
+- hosts: localhost
+  pre_tasks:
+    - include_vars: ../vars/main.yml
+  roles:
+    - ecs_template
+    - {role: ecs_template_stop,
+       when: template_state is defined and template_state == "active"
+      }
+  tasks:    
+    - name: wait for 30 sec (ecs stop time)
+      pause:
+        seconds: 30
+      when: template_state is defined and template_state == "active"
+- hosts: localhost
+  roles:
+    - ecs_template
+    - {role: ecs_template_create_image,
+       img_name: "auto-centos7.4-docker1.17-mesos1.4.0-alluxio1.6.1-https-spark2.2.0",
+       img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.0, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
+       when: template_state is defined and template_state == "stopped"
+      }
+  tasks:    
+    - name: wait for 5 min (image creation time)
+      pause:
+        minutes: 5
+      when: template_state is defined and template_state == "stopped"
+- hosts: localhost
+  roles:
+    - ecs_template
+    - {role: ecs_template_delete,
+       when: template_state is defined and template_state == "stopped"
+      }
+  
+    
+  
+
+
+
+

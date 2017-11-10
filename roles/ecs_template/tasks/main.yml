@@ -1,0 +1,16 @@
+- name: Request ecs list from AUTH API
+  uri:
+    url: "{{ AUTH_URL_ECS }}/servers/detail?name=template"
+    method: GET
+    return_content: yes
+    validate_certs: yes
+    HEADER_Content-Type: "application/json"
+    HEADER_X-Auth-Token: "{{ token['x_subject_token'] }}"
+  register: ecstemplatelist
+
+- name: get ECS state
+  set_fact: template_state="{{ ecstemplatelist['json']['servers'][0]['OS-EXT-STS:vm_state'] }}"
+  when: ecstemplatelist['json']['servers']|length > 0
+
+# - debug:
+    # msg: "{{ template_state }}"

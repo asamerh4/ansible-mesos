@@ -16,3 +16,9 @@
     name: "{{ item }}"
     groups: "mesos-masters"
   with_items: "{{ master_public_ip }}"
+
+- name: Add new Template hosts to inventory
+  add_host:
+    name: "{{ item }}"
+    groups: "template"
+  with_items: "{{ master_public_ip }}"

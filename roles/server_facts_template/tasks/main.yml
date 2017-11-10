@@ -1,0 +1,15 @@
+---
+- name: master's private IP group
+  set_fact: master_private_group="{{ ecstemplatelist['json']|json_query('servers[0].addresses.*[0]') }}"
+  when: ecstemplatelist['json']['servers']|length > 0
+
+- name: master's private IP
+  set_fact: master_private_ip="{{ master_private_group[0].addr }}"
+  when: ecstemplatelist['json']['servers']|length > 0
+
+- name: get public IP
+  set_fact: master_public_ip="{{ floatingiplist['json']|json_query(query_eip) }}"
+  when: ecstemplatelist['json']['servers']|length > 0
+
+- debug: msg="{{ master_public_ip }}"
+  when: ecstemplatelist['json']['servers']|length > 0

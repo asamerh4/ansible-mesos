@@ -284,8 +284,6 @@
         #- systemctl enable jenkins
         ## Instance-Metadata proxy cache
         - sed -i 's;XXX_TITLE_XXXX;'{{ cluster_id }}';g' /usr/share/nginx/html/index.html
-        - systemctl start nginx
-        - systemctl enable nginx
         ## alluxio master and proxy service
         - systemctl start alluxio-master
         - systemctl enable alluxio-master
@@ -359,23 +357,13 @@
     mount: name=/var/log/mesos src='tmpfs' fstype=tmpfs opts='size={{ ramdisk_gb }}g' state=mounted
   - name: Restart docker engine
     service: name=docker state=started enabled=yes
-  #NGINX-HTMLs
-  - name: copy dashboard html-folder to /usr/share/nginx/html
-    copy:
-      src: ../templates/nginx_dashboards/html
-      dest: /usr/share/nginx
-  #NGINX-ssl-prep  #-->https://www.digitalocean.com/community/tutorials/how-to-create-a-self-signed-ssl-certificate-for-nginx-on-centos-7
-  - name: create ssl cert folder
-    file: path=/etc/ssl/private mode=0700 state=directory
-  - name: create self signed cert for nginx-ssl
-    command: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=DE/ST=Bavaria/L=Wessling/O=DLR/CN=" -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
-  - name: create a strong Diffie-Hellman group
-    command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
   #NGINX-ssl conf.d
-  - name: nginx ssl conf.d
+  - name: nginx public ssl dashboard conf.d
     copy:
       src: ../templates/nginx_dashboards/conf.d/ssl.conf
       dest: /etc/nginx/conf.d/ssl.conf
+  - name: restart nginx
+    service: name=nginx state=restarted enabled=yes
   #ZEPPELIN-PREP
   - name: copy zeppelin postinstall scripts
     copy:

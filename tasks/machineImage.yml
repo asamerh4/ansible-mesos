@@ -86,7 +86,13 @@
           secgrouprule_remote_ip_prefix: "0.0.0.0/0",
           secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
           when: secfact_public_template|length == 0
-          
+      }
+    - { role: secgrouprule_create,
+          secgrouprule_direction: "egress",
+          secgrouprule_ethertype: "IPv4",
+          secgrouprule_remote_ip_prefix: "0.0.0.0/0",
+          secgroup_id: "{{ secgroup['json']['security_group']['id'] }}",
+          when: secfact_public_template|length == 0 
       }
     
 
@@ -313,6 +319,25 @@
     when: net_stat.stat.exists == False
   - name: restart networking
     service: name=network state=restarted enabled=yes
+  #NGINX-HTMLs
+  - name: copy dashboard html-folder to /usr/share/nginx/html
+    copy:
+      src: ../templates/nginx_dashboards/html
+      dest: /usr/share/nginx
+  #NGINX-ssl-prep  #-->https://www.digitalocean.com/community/tutorials/how-to-create-a-self-signed-ssl-certificate-for-nginx-on-centos-7
+  - name: create ssl cert folder
+    file: path=/etc/ssl/private mode=0700 state=directory
+  - name: create self signed cert for nginx-ssl
+    command: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=DE/ST=Bavaria/L=Wessling/O=DLR/CN=dlr.de" -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
+  - name: create a strong Diffie-Hellman group
+    command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+  #NGINX-conf
+  - name: nginx.conf cleanup
+    file: name=/etc/nginx/nginx.conf state=absent
+  - name: nginx.conf
+    copy:
+      src: ../templates/nginx_dashboards/nginx.conf
+      dest: /etc/nginx/nginx.conf
   #NGINX-internal conf.d
   - name: nginx internal conf.d
     copy:
@@ -326,9 +351,10 @@
       dest: /etc/motd
       create: yes
       block: |
-       ...####...  analytics base image
-       ..#### #..  centos7.4-docker1.17-mesos1.4.0-alluxio1.6.1-spark2.2.0 {{ lookup('pipe','date') }}
-       .####   #.  github.com/asamerh4/ansible-mesos
+       ..   ___   ____    analytics base image
+       ..  / _ \ / __ \   centos7.4-mesos1.4.0-alluxio1.6.1-spark2.2.0
+       .. /  __// /_/ /   built for you on: {{ lookup('pipe','date') }}
+       .. \___/ \____/    github.com/asamerh4/ansible-mesos
       marker: " "
 
 # IMAGE CREATION
@@ -364,10 +390,3 @@
     - {role: ecs_template_delete,
        when: template_state is defined and template_state == "stopped"
       }
-  
-    
-  
-
-
-
-

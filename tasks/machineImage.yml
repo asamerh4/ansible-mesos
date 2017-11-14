@@ -178,6 +178,8 @@
     yum: name=docker-engine-17.05.0.ce-1.el7.centos.x86_64,iptables-services,htop,python-pip,nginx
   - name: disable docker service
     service: name=docker state=stopped enabled=no
+  - name: add linux user to docker group
+    user: name=linux groups=docker append=yes
   - name: disable nginx service
     service: name=nginx state=stopped enabled=no
   - name: disable iptables service
@@ -297,6 +299,8 @@
     lineinfile: dest=/opt/spark/conf/spark-env.sh create=yes line="export MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so"
   - name: spark-home entry
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.mesos.executor.home /opt/spark"
+  - name: spark-extra cores entry
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.mesos.extra.cores 2"
   - name: alluxio-client entry to spark-defaults (1)
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.driver.extraClassPath /opt/alluxio/client/default/alluxio-1.6.1-default-client.jar"
   - name: alluxio-client entry to spark-defaults (2)

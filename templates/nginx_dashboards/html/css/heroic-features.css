@@ -5,7 +5,8 @@
  */
 
 body {
-  padding-top: 54px;
+   background: url(back1.jpg);
+   padding-top: 54px;
 }
 
 @media (min-width: 992px) {
@@ -17,3 +18,9 @@ body {
 .card {
   height: 100%;
 }
+
+.jumbotron {
+  background-color: rgba(0, 9, 34, 0.7803921568627451);
+  color: white;
+}
+

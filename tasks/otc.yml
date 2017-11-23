@@ -413,15 +413,15 @@
       runcmd:
         ## Alluxio RAMFS -> no swap
         - mkdir /var/lib/alluxio
-        - mount -t ramfs -o size=12G ramfs /var/lib/alluxio
+        - mount -t ramfs -o size={{ alluxio_ramfs_size_gb_std }}G ramfs /var/lib/alluxio
         - chmod a+w /var/lib/alluxio
-        - echo 'ramfs /var/lib/alluxio ramfs size=12g 0 0'                        >> /etc/fstab
+        - echo 'ramfs /var/lib/alluxio ramfs size={{ alluxio_ramfs_size_gb_std }}g 0 0' >> /etc/fstab
         ## Alluxio Worker config
         - groupadd alluxio-rw
         - usermod -aG alluxio-rw linux
         - echo alluxio.worker.hostname=$(hostname -I | cut -d" " -f 1)             > /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.master.hostname={{ master_private_ip }}                    >> /opt/alluxio/conf/alluxio-site.properties
-        - echo alluxio.worker.memory.size=12GB                                    >> /opt/alluxio/conf/alluxio-site.properties
+        - echo alluxio.worker.memory.size={{ alluxio_ramfs_size_gb_std }}GB       >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.worker.tieredstore.level0.dirs.path=/var/lib/alluxio       >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.address={{ alluxio_underfs_s3 }}                   >> /opt/alluxio/conf/alluxio-site.properties
         - echo alluxio.underfs.s3.threads.max=200                                 >> /opt/alluxio/conf/alluxio-site.properties
@@ -464,6 +464,9 @@
         - systemctl enable alluxio-worker
         - systemctl start alluxio-proxy
         - systemctl enable alluxio-proxy
+        ## spark-shuffle service
+        - systemctl start spark-shuffle
+        - systemctl enable spark-shuffle
         ## Instance-Metadata proxy cache
         - systemctl start nginx
         - systemctl enable nginx

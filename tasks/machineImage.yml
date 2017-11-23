@@ -187,7 +187,7 @@
   #MESOS
   - name: add mesosphere repo
     yum: name=http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-3.noarch.rpm state=present
-  - name: install mesos 1.4.0
+  - name: install mesos 1.4.1
     yum: name=mesos
   - name: disable mesos-master
     service: name=mesos-master state=stopped enabled=no
@@ -282,7 +282,7 @@
     register: spark_stat
   - name: download spark 2.2.0
     get_url:
-      url: http://mirror.klaus-uwe.me/apache/spark/spark-2.2.0/spark-2.2.0-bin-hadoop2.7.tgz
+      url: ftp://mirror.netcologne.de/apache.org/spark/spark-2.2.0/spark-2.2.0-bin-hadoop2.7.tgz
       dest: /home/linux/spark-2.2.0-bin-hadoop2.7.tgz
     when: spark_stat.stat.exists == False
   - name: unpack spark
@@ -301,11 +301,36 @@
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.mesos.executor.home /opt/spark"
   - name: spark-extra cores entry
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.mesos.extra.cores 2"
+  - name: use kryo serializer
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.serializer org.apache.spark.serializer.KryoSerializer"
   - name: alluxio-client entry to spark-defaults (1)
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.driver.extraClassPath /opt/alluxio/client/default/alluxio-1.6.1-default-client.jar"
   - name: alluxio-client entry to spark-defaults (2)
     lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.executor.extraClassPath /opt/alluxio/client/default/alluxio-1.6.1-default-client.jar"
-    
+  - name: configure dynamic resource allocation prep (1)
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.dynamicAllocation.enabled false"
+  - name: configure dynamic resource allocation prep (2)
+    lineinfile: dest=/opt/spark/conf/spark-defaults.conf state=present create=yes line="spark.shuffle.service.enabled false"
+  - name: create spark-shuffle-systemd scripts
+    file: name=/usr/lib/systemd/system/spark-shuffle.service state=touch
+  - name: configure spark-mesos shuffle service
+    blockinfile:
+      dest: /usr/lib/systemd/system/spark-shuffle.service
+      block: |
+        [Unit]
+        Description=spark-mesos-shuffle service
+        After=network.target
+        [Service]
+        Type=forking
+        User=linux
+        Group=linux
+        ExecStart=/opt/spark/sbin/start-mesos-shuffle-service.sh
+        ExecStop=/opt/spark/sbin/stop-mesos-shuffle-service.sh
+        WorkingDirectory=/opt/spark
+        [Install]
+        WantedBy=multi-user.target
+  - name: disable spark-shuffle
+    service: name=spark-shuffle state=stopped enabled=no    
   #CHOWN
   - name: spark chown to user linux
     command: chown -R linux:linux /opt/spark
@@ -356,7 +381,7 @@
       create: yes
       block: |
        ..   ___   ____    analytics base image
-       ..  / _ \ / __ \   centos7.4-mesos1.4.0-alluxio1.6.1-spark2.2.0
+       ..  / _ \ / __ \   centos7.4-mesos1.4.1-alluxio1.6.1-spark2.2.0
        .. /  __// /_/ /   built for you on: {{ lookup('pipe','date') }}
        .. \___/ \____/    github.com/asamerh4/ansible-mesos
       marker: " "
@@ -379,8 +404,8 @@
   roles:
     - ecs_template
     - {role: ecs_template_create_image,
-       img_name: "auto-centos7.4-docker1.17-mesos1.4.0-alluxio1.6.1-https-spark2.2.0",
-       img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.0, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
+       img_name: "auto-centos7.4-docker1.17-mesos1.4.1-alluxio1.6.1-https-spark2.2.0",
+       img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.1, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
        when: template_state is defined and template_state == "stopped"
       }
   tasks:    

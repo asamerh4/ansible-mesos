@@ -1,6 +1,8 @@
 ---
 alluxio_block_size: "{{ alluxio_block_size }}"
 alluxio_underfs_s3: "{{ alluxio_underfs_s3 }}"
+alluxio_ramfs_size_gb_std: 12
+alluxio_ramfs_size_gb_big: 100
 availability_zone: "eu-de-02"
 aws_access_key_id: "XXXX_aws_access_key_id_XXXX"
 aws_secret_access_key: "XXXX_aws_secret_access_key_XXXX"

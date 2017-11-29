@@ -258,6 +258,7 @@
       #cloud-config
       runcmd:
         ## NATing for agents - TBD
+        - echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
         - echo 'IPADDR1={{ vpc_nexthop_ip }}' >> /etc/sysconfig/network-scripts/ifcfg-eth
         - systemctl restart network
         - iptables -t nat -A POSTROUTING \! -d {{ subnet_cidr }} -o eth0 -j MASQUERADE

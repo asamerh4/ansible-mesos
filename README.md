@@ -7,7 +7,7 @@ playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 - distributed alluxio inMemory-FS accross mesos-agents (useable via alluxio-proxy REST API at `localhost:39999` on every cluster-node)
 - alluxio underFS configured for S3 (OBS)
 - readonly ssl enabled webUI & dashboards of `mesos` and `alluxio`
-- chached nginx proxy for otc-instance metadata endpoints accessible at every node at  `localhost/user-data`
+- cached nginx proxy for otc-instance metadata endpoints accessible at every node at  `localhost/user-data`
 - jenkins instance for static processing pipelines (deactivated by default)
 
 ![alt text](docs/whatyouget.png "whatyouget")
@@ -15,7 +15,7 @@ playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 ## why you want this
 - for running batch-processing workloads on mesos from and to S3 optionally using an InMemory cache for intermediate data or results
 - doing batch or distributed processing using `fast` InMemory-data with mesos-frameworks like `spark`, `storm` or `mesos-batch`
-- to run analytics on selected and optionally chached datasets from S3
+- to run analytics on selected and optionally cached datasets from S3
 
 ## what you need
 - ansible control host with internet access (preferably linuxOS)

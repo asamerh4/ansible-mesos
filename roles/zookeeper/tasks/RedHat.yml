@@ -1,19 +1,4 @@
 ---
-- file: path=/opt/src state=directory
-- file: path={{zookeeper_dir}} state=directory
-
-
-- name: Download zookeeper version.
-  get_url: url={{zookeeper_url}} dest=/opt/src/zookeeper-{{zookeeper_version}}.tar.gz
-  tags: bootstrap
-
-- name: Install Java packages
-  yum: name=java-1.8.0-openjdk
-  
-- name: Unpack tarball.
-  command: tar zxf /opt/src/zookeeper-{{zookeeper_version}}.tar.gz --strip-components=1 chdir={{zookeeper_dir}} creates={{zookeeper_dir}}/bin
-  tags: bootstrap
-
 - group: name=zookeeper system=yes
 - user: name=zookeeper group=zookeeper system=yes
 

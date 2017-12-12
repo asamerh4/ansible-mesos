@@ -193,6 +193,22 @@
     service: name=mesos-master state=stopped enabled=no
   - name: disable mesos-agent
     service: name=mesos-slave state=stopped enabled=no
+  #ZOOKEEPER-prep (installed to /opt/zookeeper-X.X.X) -> systemd gen & zk-config within zookeeper role, when image is used as a mesos-master
+  - name: stat
+    stat: path=/opt/zookeeper-3.4.11/bin
+    register: stat_zoo
+  - name: create zk-dir
+    file: path=/opt/zookeeper-3.4.11 state=directory
+  - name: Download zookeeper
+    get_url:
+      url: http://www.us.apache.org/dist/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz 
+      dest: /home/linux/zookeeper-3.4.11.tar.gz
+    when: stat_zoo.stat.exists == False
+  - name: Unpack tarball.
+    command: tar zxf /home/linux/zookeeper-3.4.11.tar.gz --strip-components=1 chdir=/opt/zookeeper-3.4.11 creates=/opt/zookeeper-3.4.11/bin
+    when: stat_zoo.stat.exists == False
+  - name: cleanup
+    file: name=/home/linux/zookeeper-3.4.11.tar.gz state=absent
   #JAVA
   - name: install jdk 8
     yum: name=java-1.8.0-openjdk-devel
@@ -404,8 +420,8 @@
   roles:
     - ecs_template
     - {role: ecs_template_create_image,
-       img_name: "auto-centos7.4-docker1.17-mesos1.4.1-alluxio1.6.1-https-spark2.2.0",
-       img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.1, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
+       img_name: "auto-centos7.4-docker1.17-mesos1.4.1-zk3.4.11-alluxio1.6.1-https-spark2.2.0",
+       img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.1, zookeeper 3.4.11, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
        when: template_state is defined and template_state == "stopped"
       }
   tasks:    

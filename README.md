@@ -195,6 +195,9 @@ Ansible shows the public-IP of our mesos-master, which acts also as a lean nginx
 
 The nginx-ssl config uses a self signed certificate. Modern browsers raise some security warnings about this. If you plan to maintain a permanent solution, then get your trusted cert, get a free domain, and so on... 
 
+the landing page looks like this:
+
+![alt text](docs/dashboard1.png "cluster landing page")
 ```
 https://PUBLIC-IP/
            |----> state.json # mesos-state info
@@ -242,10 +245,6 @@ mesos-masters
 mesos-agents (autoscaling group)
 |-agent-group
 ```
-
-the landing page looks like this:
-
-![alt text](docs/dashboard1.png "cluster landing page")
 
 ## step 1: enter SPARK
 Now we're ready to ssh into our mesos-master and start a spark-shell. This demo invokes the spark-shell which registers as a mesos-framework using the `--master` commandline parameter. All required scala/java classes for working with the data (from S3 and alluxio) are assembled to a so called `fat-jar` and referenced using the `--jars` parameter. When spark starts in client mode (default) these jars are automatically synced to all agents (mesos worker nodes).

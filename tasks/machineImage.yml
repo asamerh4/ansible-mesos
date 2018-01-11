@@ -420,7 +420,7 @@
   roles:
     - ecs_template
     - {role: ecs_template_create_image,
-       img_name: "auto-centos7.4-docker1.17-mesos1.4.1-zk3.4.11-alluxio1.6.1-https-spark2.2.0",
+       img_name: "auto-centos7.4-docker1.17-mesos1.4.1-zk3.4.11-alluxio1.6.1-https-spark2.2.0-a",
        img_desc: "ansible managed centos7.4 with docker engine 1.17, mesos 1.4.1, zookeeper 3.4.11, alluxio 1.6.1, awscli, nginx (public readonly sites via ssl), spark 2.2.0, no firewalld, no selinux, some network tweaks, iptables service, ip forwarding, all mentioned core services are disabled by default",
        when: template_state is defined and template_state == "stopped"
       }

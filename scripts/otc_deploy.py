@@ -40,9 +40,9 @@ parser.add_argument("-f", "--ansible-vault-password-file", dest = 'password_file
 args = parser.parse_args()
 arg_vars = vars(args)
 
-ansible_prompt = "--ask-vault-pass"
-if arg_vars["password_file"]:
-  ansible_prompt = "--vault-password-file={}".format(args.password_file)
+#ansible_prompt = "--ask-vault-pass"
+#if arg_vars["password_file"]:
+#  ansible_prompt = "--vault-password-file={}".format(args.password_file)
 
 
 if args.action == "provision":
@@ -50,7 +50,7 @@ if args.action == "provision":
     print parser.error("Provisioning requires at least one role to be set (e.g. ZooKeeper, Mesos Master, etc)")
   else:
     call(["ansible-playbook",
-          ansible_prompt,
+          #ansible_prompt,
           "--private-key={}".format(arg_vars["ssh-key"]),
 		  "-e", "alluxio_block_size={}".format(str(arg_vars["alluxio-block-size"])+"MB"),
 		  "-e", "alluxio_underfs_s3={}".format(arg_vars["alluxio-s3-bucket"]),

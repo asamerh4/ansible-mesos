@@ -251,7 +251,7 @@ Now we're ready to ssh into our mesos-master and start a spark-shell. This demo 
 
 ### clone spark/gdal/geotrellis repo & build a fat-jar
 
-The repo in `asamerh4/spark-eo-testbed` repo holds a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed a docker image for assembling the jar file is built. The jar file is copied out from the container to the current path.
+The repo in `asamerh4/spark-eo-testbed` contains a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed, a docker image for assembling the jar file is built. The jar file is then copied out from the container to the current path.
 
 ```sh
 ssh -i "{{ ssh-key }}" {{ meos-master-PublicIP }}

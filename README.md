@@ -56,7 +56,19 @@ user-access keys consist of `access_key_id` and  `secret_access_key` and must be
 # Sentinel-3 spark-mesos demo
 The following steps could be seen as an end-to-end tutorial from preparing a control host to bootstrap a cluster within the cloud and to the actual interesting part: `writing eo spark-workflows in scala.`
 
-## pre step: provision your own cluster
+## pre step 1: where is the input eo data?
+this step is completely decoupled from the whole cluster/spark/mesos/kubernetes... stuff. Copy your eo-data to the Cloud-provider's object-storage. This is in all cases some form/derivate of `S3`
+- the copy process itself should be done using e.g. aws-cli, which also works really well for OTC-S3
+- when trying to upload huge amounts (+100TB) of data, consider alternative approaches, like exposing your data to some https-get endpoint, use datahubs like `code-de` or `esa sentinel sci hubs`  and pull this data from within the cloud (e.g. from an ingestion batch-system like in [asamerh4/sentinel3-s3-ingestion-pipeline](https://github.com/asamerh4/sentinel3-s3-ingestion-pipeline)). Some cloud providers offer import/export appliances (e.g. AWS-snowball), but that's another story
+- try to structure your data within a S3-bucket with meaningful and human readable `spatiotemporal indexes`.
+  -  if your data is already geo-refernced in some form, try to press it through a standardized tiling system, like MGRS or any other rectangular `{x/y/z}` system.
+  - an index (=folder structure within S3-bucket) could start with spatial info, continued by a temporal part and finished with product specific infos...
+  - these object storage indexes do have significant impact on I/O throughput. Construct such a structure based on your future analytics use cases. Higher index level diversity guarantees better balancing on the S3-backend service. ~
+  - like so: /sentinel3/30/U/2017/08/07/S3A_SL_1_RBT____20170807T220927_20170807T221227_20170808T004159_0179_021_001_0719_SVL_O_NR_002.SEN3/S9_BT_io.tif
+  - like in: [asamerh4/sentinel3-to-utm-pipeline](https://github.com/asamerh4/sentinel3-to-utm-pipeline)
+
+
+## pre step 2: provision your own cluster
 As a prerequisite to run some spark eo workloads you should have some form of mesos/alluxio cluster running. Mesos acts as the execution base-platform - think of general purpose resource scheduling.
 
 ### prepare your control host

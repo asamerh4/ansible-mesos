@@ -249,9 +249,9 @@ mesos-agents (autoscaling group)
 ## step 1: enter SPARK
 Now we're ready to ssh into our mesos-master and start a spark-shell. This demo invokes the spark-shell which registers as a mesos-framework using the `--master` commandline parameter. All required scala/java classes for working with the data (from S3 and alluxio) are assembled to a so called `fat-jar` and referenced using the `--jars` parameter. When spark starts in client mode (default) these jars are automatically synced to all agents (mesos worker nodes).
 
-### clone repo & build fat-jar
+### clone spark/gdal/geotrellis repo & build a fat-jar
 
-This repo holds a scala project and is used to assemble all dependencies to a single jar file. When `build.sh` is executed a docker image for assembling the jar file is built. The jar file is copied to the current host path.
+The repo in `asamerh4/spark-eo-testbed` repo holds a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed a docker image for assembling the jar file is built. The jar file is copied out from the container to the current path.
 
 ```sh
 ssh -i "{{ ssh-key }}" {{ meos-master-PublicIP }}

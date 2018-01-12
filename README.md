@@ -1,6 +1,6 @@
 ansible-mesos
 =============
-playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
+Playbooks and roles for mesos & alluxio deployment on Open Telekom Cloud (OTC)
 
 ##  what you get
 - mesos cluster with one master (multi-master HA setup coming soon) and private agents within an autoscaling group (private IPs)
@@ -57,7 +57,7 @@ user-access keys consist of `access_key_id` and  `secret_access_key` and must be
 The following steps could be seen as an end-to-end tutorial from preparing a control host to bootstrap a cluster within the cloud and to the actual interesting part: `writing eo spark-workflows in scala.`
 
 ## pre step 1: where is the input eo data?
-this step is completely decoupled from the whole cluster/spark/mesos/kubernetes... stuff. Copy your eo-data to the Cloud-provider's object-storage. This is in all cases some form/derivate of `S3`
+This step is completely decoupled from the whole cluster/spark/mesos/kubernetes... stuff. Copy your eo-data to the Cloud-provider's object-storage. This is in all cases some form/derivate of `S3`
 - the copy process itself should be done using e.g. aws-cli, which also works really well for OTC-S3
 - when trying to upload huge amounts (+100TB) of data, consider alternative approaches, like exposing your data to some https-get endpoint, use datahubs like `code-de` or `esa sentinel sci hubs`  and pull this data from within the cloud (e.g. from an ingestion batch-system like in [asamerh4/sentinel3-s3-ingestion-pipeline](https://github.com/asamerh4/sentinel3-s3-ingestion-pipeline)). Some cloud providers offer import/export appliances (e.g. AWS-snowball), but that's another story
 - try to structure your data within a S3-bucket with meaningful and human readable `spatiotemporal indexes`.
@@ -72,7 +72,7 @@ this step is completely decoupled from the whole cluster/spark/mesos/kubernetes.
 As a prerequisite to run some spark eo workloads you should have some form of mesos/alluxio cluster running. Mesos acts as the execution base-platform - think of general purpose resource scheduling.
 
 ### prepare your control host
-Your control host (a linux host where ansible is installed to communicate with the cloud-APIs to create something like a mesos/spark cluster), which could be your office-client computer, or a VirtualboxVM, or some plain normal on-premise linux server must have access to the cloud-providers API-endpoints. In our case we need access (https) to the OTC-API servers. Manadatory packages to be installed on control host are:
+Your control host (a linux host where ansible is installed to communicate with the cloud-APIs to create something like a mesos/spark cluster), which could be your office-client computer, or a VirtualboxVM, or some plain normal on-premise linux server must have access to the cloud-providers API-endpoints. In our case we need access (https) to the OTC-API servers. Mandatory packages to be installed on control host are:
 - git, epel, python(2.7++), python-pip, ansible, awscli
 
 ### generate OTC key-pair & copy to control-host
@@ -88,7 +88,7 @@ cd ansible-mesos
 ```
 
 ### edit or create `vars/main.yml`
-do not edit lines containing `{{ variable }}` 
+Do not edit lines containing `{{ variable }}` 
 ```python
 ---
 alluxio_block_size: "{{ alluxio_block_size }}"
@@ -148,7 +148,7 @@ Once finished, the resulting VM-image is available within your OTC-account (=ten
 
 These components act as the single base of all subsequent generated VM-instances. All service configuration we defined in `vars/main.yml` is injected when the cluster playbook is executed. (see next step)
 
-`Note:` when customizing the machineImage (`tasks/machineImage.yml`), keep in mind that you should only add/install packages which are used by all VM-types in our cluster. (e.g. masters, agents, edge-nodes). also the resulting image size is quite important. Larger images (+2GB) tend to have significant longer deployment-times than lean ones. (~1GB)
+`Note:` when customizing the machineImage (`tasks/machineImage.yml`), keep in mind that you should only add/install packages which are used by all VM-types in our cluster. (e.g. masters, agents, edge-nodes). Also the resulting image size is quite important. Larger images (+2GB) tend to have significant longer deployment-times than lean ones. (~1GB)
 
 ### create cluster
 Now we have everything ready for creating a cluster with 1 master and 1 agent (=initial autoscaling group size)
@@ -205,9 +205,9 @@ Ansible shows the public-IP of our mesos-master, which acts also as a lean nginx
 
 `Caution`: no auth-solution is deployed so far. For more production-like deployments consider to lock down this nginx-server, with e.g. oauth
 
-The nginx-ssl config uses a self signed certificate. Modern browsers raise some security warnings about this. If you plan to maintain a permanent solution, then get your trusted cert, get a free domain, and so on... 
+The nginx-ssl config uses a self-signed certificate. Modern browsers raise some security warnings about this. If you plan to maintain a permanent solution, then get your trusted cert, get a free domain, and so on... 
 
-the landing page looks like this:
+The landing page looks like this:
 
 ![alt text](docs/dashboard1.png "cluster landing page")
 ```
@@ -263,7 +263,7 @@ Now we're ready to ssh into our mesos-master and start a spark-shell. This demo 
 
 ### clone spark/gdal/geotrellis repo & build a fat-jar
 
-The repo in `asamerh4/spark-eo-testbed` contains a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed, a docker image for assembling the jar file is built. The jar file is then copied out from the container to the current path.
+The repo in [asamerh4/spark-eo-testbed](https://github.com/asamerh4/spark-eo-testbed) contains a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed, a docker image for assembling the jar file is built. The jar file is then copied out from the container to the current path.
 
 ```sh
 ssh -i "{{ ssh-key }}" {{ meos-master-PublicIP }}

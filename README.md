@@ -67,6 +67,10 @@ This step is completely decoupled from the whole cluster/spark/mesos/kubernetes.
   - like so: /sentinel3/30/U/2017/08/07/S3A_SL_1_RBT____20170807T220927_20170807T221227_20170808T004159_0179_021_001_0719_SVL_O_NR_002.SEN3/S9_BT_io.tif
   - like in: [asamerh4/sentinel3-to-utm-pipeline](https://github.com/asamerh4/sentinel3-to-utm-pipeline)
 
+### Demo S3-bucket seen with alluxio
+Alluxio is used as distributed FS between worker-nodes. It has hadoop-comapitible API's and follows the same principles as hdfs - but all in RAM.
+![alt text](docs/alluxio2.png "alluxioFS")
+
 
 ## pre step 2: provision your own cluster
 As a prerequisite to run some spark eo workloads you should have some form of mesos/alluxio cluster running. Mesos acts as the execution base-platform - think of general purpose resource scheduling.
@@ -266,7 +270,7 @@ Now we're ready to ssh into our mesos-master and start a spark-shell. This demo 
 The repo in [asamerh4/spark-eo-testbed](https://github.com/asamerh4/spark-eo-testbed) contains a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed, a docker image for assembling the jar file is built. The jar file is then copied out from the container to the current path.
 
 ```sh
-ssh -i "{{ ssh-key }}" linux@{{ meos-master-PublicIP }}
+ssh -i "{{ ssh-key }}" linux@{{ mesos-master-PublicIP }}
 git clone https://github.com/asamerh4/spark-eo-testbed.git
 cd spark-eo-testbed
 ./build.sh
@@ -305,6 +309,7 @@ scala>
 ```
 ## REPL inserts
 
+Enter the following lines to the interactive spark-shell, which is a so called `Read–Eval–Print Loop` (line by line or paste the whole block). Each line is evaluated and executed like you propably know from interactive notebooks like jupyter or zeppelin.
 ```scala
 import alluxio.master.MasterClientConfig;
 import geotrellis.raster._
@@ -349,9 +354,23 @@ val layoutextent: Extent = rasterMetaData.layoutExtent
 val crs = rasterMetaData.crs
 GeoTiff(maxRdd.stitch, layoutextent, crs).write(new Path("alluxio:/"+alluxio_master+"/sentinel3/geotrellis/S9_BT_in_max3.tif"))
 ```
+`Further infos:`Use the spark shell for development and live result evaluation. Once your code is mature you should consider to package the functions and objects to the fat-jar repo and use `spark-submit` instead of spark-shell to run your code on the cluster. like in: [demo-testbed](https://github.com/asamerh4/spark-eo-testbed/blob/master/testbed/src/main/scala/Main.scala)
+
+spark-submit example (from mesos-master bash):
+```sh
+/opt/spark/bin/spark-submit \
+  --master mesos://$MESOS_MASTER:5050 --class testbed.SparkApp spark-eo-testbed/testbed-assembly-1.0.jar
+```
 
 ## open spark-ui dashboard
 ![alt text](docs/spark4.png "sparkUI")
+![alt text](docs/spark5.png "sparkUI")
+![alt text](docs/spark6.png "sparkUI")
 
 ## result :-)
-![alt text](docs/res1.png "result")
+Point your browser to https://PUBLIC-IP/alluxio and navigate to our distributed inMemoryFS, which is transparent to an underlying S3-bucket. This S3-bucket was configured in pre-step2!
+
+`Note:` Our scala code stored some data to Alluxio. This data is available inside the alluxioFS and could then be persisted (read [alluxio-docs](https://www.alluxio.org/docs/master/en/Clients-Alluxio-Java.html)) to our underlying S3-bucket. If for instance our cluster is terminated, the inMemoryFS is gone and all unpersisted data is also gone!
+![alt text](docs/alluxio1.png "alluxioFS showing the results")
+
+

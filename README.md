@@ -61,7 +61,7 @@ This step is completely decoupled from the whole cluster/spark/mesos/kubernetes.
 - the copy process itself should be done using e.g. aws-cli, which also works really well for OTC-S3
 - when trying to upload huge amounts (+100TB) of data, consider alternative approaches, like exposing your data to some https-get endpoint, use datahubs like `code-de` or `esa sentinel sci hubs`  and pull this data from within the cloud (e.g. from an ingestion batch-system like in [asamerh4/sentinel3-s3-ingestion-pipeline](https://github.com/asamerh4/sentinel3-s3-ingestion-pipeline)). Some cloud providers offer import/export appliances (e.g. AWS-snowball), but that's another story
 - try to structure your data within a S3-bucket with meaningful and human readable `spatiotemporal indexes`.
-  -  if your data is already geo-refernced in some form, try to press it through a standardized tiling system, like MGRS or any other rectangular `{x/y/z}` system.
+  -  if your data is already geo-referenced in some form, try to press it through a standardized tiling system, like MGRS or any other rectangular `{x/y/z}` system.
   - an index (=folder structure within S3-bucket) could start with spatial info, continued by a temporal part and finished with product specific infos...
   - these object storage indexes do have significant impact on I/O throughput. Construct such a structure based on your future analytics use cases. Higher index level diversity guarantees better balancing on the S3-backend service. ~
   - like so: /sentinel3/30/U/2017/08/07/S3A_SL_1_RBT____20170807T220927_20170807T221227_20170808T004159_0179_021_001_0719_SVL_O_NR_002.SEN3/S9_BT_io.tif
@@ -266,7 +266,7 @@ Now we're ready to ssh into our mesos-master and start a spark-shell. This demo 
 The repo in [asamerh4/spark-eo-testbed](https://github.com/asamerh4/spark-eo-testbed) contains a scala project and is used to assemble all dependencies like geotrellis et al. to a single jar file. When `build.sh` is executed, a docker image for assembling the jar file is built. The jar file is then copied out from the container to the current path.
 
 ```sh
-ssh -i "{{ ssh-key }}" {{ meos-master-PublicIP }}
+ssh -i "{{ ssh-key }}" linux@{{ meos-master-PublicIP }}
 git clone https://github.com/asamerh4/spark-eo-testbed.git
 cd spark-eo-testbed
 ./build.sh

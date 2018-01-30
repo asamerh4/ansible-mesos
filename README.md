@@ -318,41 +318,43 @@ import geotrellis.raster.resample._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.hadoop._
+import geotrellis.spark.io.index.ZCurveKeyIndexMethod
 import geotrellis.spark.tiling._
 import geotrellis.util._
 import geotrellis.vector.{Extent, ProjectedExtent}
-import geotrellis.spark.io.index.ZCurveKeyIndexMethod
+import java.net.URI
+import java.time.{LocalDateTime, ZoneId}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
+import testbed.BiasedImplicits._
+
 
 val alluxio_master = MasterClientConfig.defaults.getMasterInquireClient.getMasterRpcAddresses.get(0).toString
-
-//masks
-val tiffs = sc.hadoopGeoTiffRDD("alluxio:/"+alluxio_master+"/sentinel3/30/U/*/*/*/*/S9_BT_in.tif")
-val maskRDD: RDD[(ProjectedExtent, Tile)] = tiffs
-val (_, rasterMetaData) = TileLayerMetadata.fromRdd(maskRDD, FloatingLayoutScheme(512))
-
-val tilerOptions = Tiler.Options(resampleMethod = Bilinear, partitioner = new HashPartitioner(maskRDD.partitions.length))
-
-val tiled: RDD[(SpatialKey, Tile)] = maskRDD.tileToLayout(rasterMetaData, tilerOptions)
-// val layerRdd: TileLayerRDD[SpatialKey] = ContextRDD(tiled, rasterMetaData)
-
-//TEMPERATURE
-val maximumTemperature = tiled.map { case (key, tile) => (key.getComponent[SpatialKey], tile)}.reduceByKey(_.localMax(_))
-
 implicit val sparkContext = sc
-val maxRdd: TileLayerRDD[SpatialKey] = ContextRDD(maximumTemperature, rasterMetaData)
+val tiffs: RDD[(TemporalProjectedExtent, Tile)] = HadoopGeoTiffRDD[ProjectedExtent, TemporalProjectedExtent, Tile](
+  path = new Path("alluxio:/"+alluxio_master+"/sentinel3/30/U/*/*/*/*/S9_BT_in.tif"), 
+  uriToKey = (uri: URI, pe: ProjectedExtent) => { 
+    // get from uri the temporal component, where uri is a path to each geotiff
+    val uriParts1 = uri.getPath.split("/")
+    val uriParts2 = uriParts1(7).split("_")
+    val date = LocalDateTime.of(uriParts1(4).toInt, uriParts1(5).toInt, uriParts1(6).toInt, uriParts2(7).substring(9,11).toInt, uriParts2(7).substring(11,13).toInt).atZone(ZoneId.of("UTC"))
+    TemporalProjectedExtent(pe, date)
+  },
+  options = HadoopGeoTiffRDD.Options.DEFAULT
+)
 
-val catalogPathHdfs = new Path("alluxio:/"+alluxio_master+"/sentinel3/geotrellis/")
-implicit val attributeStore = HadoopAttributeStore(catalogPathHdfs)
-val writer = HadoopLayerWriter(catalogPathHdfs, attributeStore)
-val layerId = LayerId("max3", 0)
-writer.write(layerId, maxRdd, index.ZCurveKeyIndexMethod)
-// also write out a GeoTiff
-val layoutextent: Extent = rasterMetaData.layoutExtent
-val crs = rasterMetaData.crs
-GeoTiff(maxRdd.stitch, layoutextent, crs).write(new Path("alluxio:/"+alluxio_master+"/sentinel3/geotrellis/S9_BT_in_max3.tif"))
+val (_, md) = TileLayerMetadata.fromRdd[TemporalProjectedExtent, Tile, SpaceTimeKey](tiffs, FloatingLayoutScheme(512))
+
+val tilerOptions = Tiler.Options(resampleMethod = Bilinear, partitioner = new HashPartitioner(tiffs.partitions.length))
+val tiled = ContextRDD(tiffs.tileToLayout[SpaceTimeKey](md, tilerOptions), md)
+
+val maximumTemperature = tiled.map { case (key: SpaceTimeKey, tile: Tile) => (key.getComponent[SpatialKey], tile)}.reduceByKey(_.biasedLocalMax(_))
+
+//write out a GeoTiff
+val layoutextent: Extent = md.layoutExtent
+val crs = md.crs
+GeoTiff(maximumTemperature.stitch, layoutextent, crs).write(new Path("alluxio:/"+alluxio_master+"/sentinel3/geotrellis/S9_BT_in_max56.tif"))
 ```
 `Further infos:`Use the spark shell for development and live result evaluation. Once your code is mature you should consider to package the functions and objects to the fat-jar repo and use `spark-submit` instead of spark-shell to run your code on the cluster. like in: [demo-testbed](https://github.com/asamerh4/spark-eo-testbed/blob/master/testbed/src/main/scala/Main.scala)
 

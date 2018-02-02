@@ -373,6 +373,10 @@ spark-submit example (from mesos-master bash):
 Point your browser to https://PUBLIC-IP/alluxio and navigate to our distributed inMemoryFS, which is transparent to an underlying S3-bucket. This S3-bucket was configured in pre-step2!
 
 `Note:` Our scala code stored some data to Alluxio. This data is available inside the alluxioFS and could then be persisted (read [alluxio-docs](https://www.alluxio.org/docs/master/en/Clients-Alluxio-Java.html)) to our underlying S3-bucket. If for instance our cluster is terminated, the inMemoryFS is gone and all unpersisted data is also gone!
+
 ![alt text](docs/alluxio1.png "alluxioFS showing the results")
 
+What have we done here? This image of the `MGRS quadrant 30/U` shows the max-values through time of approx. 1200 single band (S9_BT_in) GeoTiffs. So this example is only a demo and has no real scientific value, but think of how easy it is now to combine all interesting bands, each in the form of a band-RDD, to create something valueable. Further reading [here](http://geotrellis.readthedocs.io/en/latest/guide/core-concepts.html#core-concepts).
+
+![alt text](docs/res2.png "max values over time...")
 
